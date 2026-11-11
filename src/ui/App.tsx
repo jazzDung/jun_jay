@@ -373,7 +373,7 @@ export function App() {
         </div>
       )}
 
-      <main class="stage">
+      <main class={`stage${catalogOpen ? ' catalog-open' : ''}`}>
         <div class="viewport" ref={hostRef} />
         {catalogOpen && <Catalog items={catalog.items} scene={scene} onAdd={addItem} onClose={() => setCatalogOpen(false)} />}
         <Sidebar

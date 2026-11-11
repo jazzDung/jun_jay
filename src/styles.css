@@ -230,6 +230,7 @@ body { background: var(--bg); color: var(--text); overscroll-behavior: none; }
 }
 
 @media (max-width: 720px) {
-  .catalog { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 60%; z-index: 3; }
-  .catalog .panel { border-radius: 14px 14px 0 0; }
+  .catalog { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 72%; z-index: 3; }
+  .catalog .panel { border-radius: 14px 14px 0 0; background: var(--panel); }
+  .catalog-open .sidebar { display: none; }
 }

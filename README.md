@@ -81,6 +81,19 @@ Sau đó chạy `npm run validate-data`.
   `SOURCES` trong `tools/make_panel_textures.py`, chạy `python tools/make_panel_textures.py`, rồi chép màu +
   `period` in ra vào `panels.json`.
 
+## Đặt đồ
+
+- **+ Thêm đồ** → chọn món (lọc theo loại, ★ Đồ có sẵn, tìm không dấu) → món xuất hiện giữa khung nhìn.
+- Kéo món để di chuyển (chuột hoặc 1 ngón; 2 ngón vẫn xoay/zoom camera). **Lưới 5 cm** bật/tắt ở thanh trên.
+- Panel món: vị trí tâm (cm, tính từ tường cửa sổ và tường phải), xoay, khoảng cách mép tới 4 tường, cảnh báo, nhân bản, xoá.
+- Cảnh báo (viền đỏ + danh sách trong panel Cảnh): chồng lấn (ghế/sofa với bàn và thảm được miễn), xuyên tường,
+  nằm trong vùng quét cửa, lối đi chính < 80 cm từ lối vào tới cửa WC / ô thông / khu cửa sổ
+  (điểm và bề rộng chỉnh ở `circulation` trong `room.json`).
+- Phím tắt: `Ctrl+Z` / `Ctrl+Y` hoàn tác / làm lại · `Delete` xoá · `Ctrl+D` nhân bản · `R` / `Shift+R` xoay 90° ·
+  `Q` / `E` xoay 15° · `Esc` bỏ chọn.
+- Thêm hình khối mới: viết hàm trong `src/three/shapes/index.ts`, đăng ký vào `SHAPES`; catalog chỉ cần ghi tên `shape`.
+  `size` của món luôn là hộp bao thật (w ngang × d sâu × h cao, cm).
+
 ## Xuất cho AI (Gemini)
 
 Panel **Cảnh** → **Xuất cho AI** tải về một file `.zip`:
@@ -130,6 +143,15 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 - [x] Lát 3 — chọn tường/trần → đổi màu (color picker + hex + bảng màu concept), bật/tắt phào chỉ, autosave, Export/Import JSON, Share link
 - [x] Lát 4 — ốp lam sóng: texture từ ảnh mẫu thật, biên dạng sóng 3D, ốp cả tường / nửa tường / tuỳ chỉnh, kín trần / ốp lửng, cả 2 tường dài; ẩn/hiện đèn & thiết bị hiện trạng
 - [x] Lát 5 — Export for AI (mặt bằng có nhãn + 6 góc nhìn + prompt.md + ảnh vật liệu, .zip), chụp ảnh PNG, deploy GitHub Pages
+
+**v2 — Đồ đặt sàn** ✓
+
+- [x] 24 hình khối tham số theo catalog (`src/three/shapes`), catalog sidebar (lọc loại, đồ có sẵn, tìm kiếm)
+- [x] Kéo thả (chuột / 1 ngón), bắt lưới 5 cm, xoay ±15°/±90°, nhân bản, xoá, nhập vị trí bằng số
+- [x] Nhãn kích thước + khoảng cách tới tường; cảnh báo chồng lấn, xuyên tường, vùng quét cửa, lối đi < 80 cm
+- [x] Undo/redo
+
+**Tiếp theo:** v3 đồ treo tường → v4 ánh sáng + camera tầm mắt → v5 chuốt (GLTF, path tracer).
 
 ### Future improvements
 
