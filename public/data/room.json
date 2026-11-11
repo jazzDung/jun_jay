@@ -136,6 +136,16 @@
     }
   ],
 
+  "circulation": {
+    "start": { "label": "Cửa thông hành lang (lối vào)", "point": [780, 350] },
+    "targets": [
+      { "label": "Cửa WC", "point": [760, 50] },
+      { "label": "Ô thông phòng pha chế", "point": [740, 200] },
+      { "label": "Khu cửa sổ", "point": [90, 200] }
+    ],
+    "minWidth": 80
+  },
+
   "views": [
     { "id": "entrance", "label": "Từ cửa vào nhìn ra cửa sổ",
       "description": "Standing at the entry doorway (back of the room), eye level 160 cm, looking toward the window wall.",

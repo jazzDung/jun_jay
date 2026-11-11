@@ -197,7 +197,7 @@ export function buildPrompt(data: DataBundle, scene: Scene, views: ViewFile[]): 
         where = `hung on the ${wallName(w)}, ${along}, centre ${m(p.v)} above the floor`;
       } else {
         where = `centre ${m(p.x - x0)} from the window wall and ${m(p.z - z0)} from the right wall${p.rot ? `, rotated ${p.rot}°` : ''}`;
-        if ('drop' in p && p.drop) where += `, hanging ${m(p.drop)} below the ceiling`;
+        if (it.mount === 'ceiling') where += `, hanging from the ceiling${p.drop ? ` (top ${m(p.drop)} below it)` : ''}`;
       }
       const mats = itemMaterials(it);
       push(`- **${it.name}** — ${itemSize(it)}; ${where}.${mats ? ` Materials: ${mats}.` : ''}${it.notes ? ` ${it.notes}` : ''}`);

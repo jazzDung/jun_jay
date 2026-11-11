@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { analyze, footprint, wallDistances } from '../analysis/checks';
 import { loadDefaultData } from '../data/load';
-import type { Scene } from '../data/schema';
+import type { ItemPlacement, Scene } from '../data/schema';
 import type { DataBundle } from '../data/validate';
+import { downloadSnapshot, exportForAi } from '../export/exportAi';
 import {
   clearLocal,
   clearShareHash,
@@ -12,9 +14,9 @@ import {
   saveLocal,
   type SceneSource,
 } from '../state/sceneStore';
-import { downloadSnapshot, exportForAi } from '../export/exportAi';
 import { Viewer, type CameraMode, type PickTarget } from '../three/viewer';
-import { Sidebar } from './Sidebar';
+import { Catalog } from './Catalog';
+import { Sidebar, type ItemActions } from './Sidebar';
 
 type LoadState =
   | { status: 'loading' }
@@ -24,6 +26,12 @@ type LoadState =
 type Toast = { kind: 'info' | 'error'; lines: string[]; copyText?: string };
 
 const AUTOSAVE_DELAY = 400;
+/** Các thay đổi cùng tag trong khoảng này (ms) gộp thành một bước undo (kéo màu, kéo thanh trượt…). */
+const MERGE_WINDOW = 1200;
+const HISTORY_LIMIT = 100;
+
+const newUid = () => `i${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const isItem = (p: Scene['items'][number]): p is ItemPlacement => !('wall' in p);
 
 export function App() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -36,8 +44,90 @@ export function App() {
   const [camera, setCamera] = useState<CameraMode>('orbit');
   const [cutaway, setCutaway] = useState(true);
   const [ceiling, setCeiling] = useState(false);
+  const [snap, setSnap] = useState(true);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [exporting, setExporting] = useState(false);
+  const history = useRef({ past: [] as Scene[], future: [] as Scene[], tag: undefined as string | undefined, at: 0 });
+
+  // ------------------------------------------------------------ history
+
+  /** Mọi thay đổi cảnh của người dùng đi qua đây để undo/redo được. */
+  const commit = (fn: (prev: Scene) => Scene, tag?: string) =>
+    setScene((prev) => {
+      if (!prev) return prev;
+      const next = fn(prev);
+      if (next === prev) return prev;
+      const h = history.current;
+      const now = performance.now();
+      if (!(tag && h.tag === tag && now - h.at < MERGE_WINDOW)) {
+        h.past.push(prev);
+        if (h.past.length > HISTORY_LIMIT) h.past.shift();
+      }
+      h.future = [];
+      h.tag = tag;
+      h.at = now;
+      return next;
+    });
+
+  const undo = () =>
+    setScene((prev) => {
+      const h = history.current;
+      if (!prev || !h.past.length) return prev;
+      h.future.push(prev);
+      h.tag = undefined;
+      return h.past.pop()!;
+    });
+
+  const redo = () =>
+    setScene((prev) => {
+      const h = history.current;
+      if (!prev || !h.future.length) return prev;
+      h.past.push(prev);
+      h.tag = undefined;
+      return h.future.pop()!;
+    });
+
+  const resetHistory = () => (history.current = { past: [], future: [], tag: undefined, at: 0 });
+
+  // ------------------------------------------------------------ items
+
+  const updateItems = (fn: (items: Scene['items']) => Scene['items'], tag?: string) =>
+    commit((prev) => ({ ...prev, items: fn(prev.items) }), tag);
+
+  const itemActions: ItemActions = {
+    update: (uid, patch, tag) => updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, ...patch } : p)), tag && `${tag}:${uid}`),
+    rotate: (uid, delta) =>
+      updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, rot: (((p.rot + delta) % 360) + 360) % 360 } : p))),
+    duplicate: (uid) => {
+      const uidNew = newUid();
+      updateItems((items) => {
+        const src = items.find((p) => p.uid === uid);
+        if (!src || !isItem(src)) return items;
+        return [...items, { ...src, uid: uidNew, x: src.x + 20, z: src.z + 20 }];
+      });
+      setSelection({ kind: 'item', uid: uidNew });
+    },
+    remove: (uid) => {
+      updateItems((items) => items.filter((p) => p.uid !== uid));
+      setSelection(null);
+    },
+  };
+
+  const addItem = (catalogId: string) => {
+    const viewer = viewerRef.current;
+    if (!viewer || state.status !== 'ready') return;
+    const item = state.data.catalog.items.find((i) => i.id === catalogId);
+    if (!item) return;
+    const [x, z] = viewer.viewCenterCm();
+    const uid = newUid();
+    const p: ItemPlacement = { uid, catalogId, x, z, rot: 0, ...(item.mount === 'ceiling' ? { drop: 30 } : {}) };
+    updateItems((items) => [...items, p]);
+    setSelection({ kind: 'item', uid });
+    if (window.matchMedia('(max-width: 720px)').matches) setCatalogOpen(false);
+  };
+
+  // ------------------------------------------------------------ data / viewer
 
   // 1. Nạp dữ liệu + chọn cảnh ban đầu (link chia sẻ → bản tự lưu → mặc định)
   useEffect(() => {
@@ -62,12 +152,29 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  const catalogMap = useMemo(
+    () => new Map(state.status === 'ready' ? state.data.catalog.items.map((i) => [i.id, i]) : []),
+    [state],
+  );
+
   // 2. Tạo viewer một lần khi dữ liệu sẵn sàng
   useEffect(() => {
     if (state.status !== 'ready' || !hostRef.current) return;
+    const { room, panels, catalog } = state.data;
     const viewer = new Viewer(hostRef.current);
-    viewer.setRoom(state.data.room, state.data.panels);
+    viewer.setRoom(room, panels, catalog.items);
     viewer.onPick = (t) => setSelection(t);
+    viewer.onItemMove = (uid, x, z) => updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, x, z } : p)));
+    viewer.labelFor = (_uid, p) => {
+      const item = catalogMap.get(p.catalogId);
+      if (!item) return '';
+      const size = `${item.size.w} × ${item.size.d} cm`;
+      if (item.mount !== 'floor') return size;
+      const dist = wallDistances(room, { placement: p, item, rect: footprint(p, item) });
+      if (!dist) return size;
+      const nearest = dist.reduce((a, b) => (b.cm < a.cm ? b : a));
+      return `${size} · cách ${nearest.label.toLowerCase()} ${Math.round(nearest.cm)} cm`;
+    };
     viewerRef.current = viewer;
     // Dev: điều khiển viewer từ console để kiểm tra góc nhìn.
     if (import.meta.env.DEV) (window as unknown as { __viewer: Viewer }).__viewer = viewer;
@@ -77,17 +184,51 @@ export function App() {
     };
   }, [state]);
 
+  const analysis = useMemo(
+    () => (state.status === 'ready' && scene ? analyze(state.data.room, scene, catalogMap) : { items: [], warnings: [] }),
+    [scene, state, catalogMap],
+  );
+
   // 3. Áp cảnh lên viewer + tự lưu (không tự lưu khi đang xem link chia sẻ)
   useEffect(() => {
     if (!scene) return;
     viewerRef.current?.applyScene(scene);
+    viewerRef.current?.setWarnings([...new Set(analysis.warnings.flatMap((w) => w.uids))]);
     if (source === 'shared') return;
     setSaveState('pending');
     const t = setTimeout(() => setSaveState(saveLocal(scene) ? 'saved' : 'unavailable'), AUTOSAVE_DELAY);
     return () => clearTimeout(t);
-  }, [scene, source, state]);
+  }, [scene, source, state, analysis]);
 
   useEffect(() => viewerRef.current?.setSelection(selection), [selection, state]);
+  useEffect(() => viewerRef.current?.setSnap(snap ? 5 : 0), [snap, state]);
+
+  // món đang chọn bị xoá (undo, nhập cảnh khác…) → bỏ chọn
+  useEffect(() => {
+    if (selection?.kind === 'item' && scene && !scene.items.some((p) => p.uid === selection.uid)) setSelection(null);
+  }, [scene, selection]);
+
+  // Phím tắt
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('input, textarea, select, [contenteditable]')) return;
+      const mod = e.ctrlKey || e.metaKey;
+      const k = e.key.toLowerCase();
+      if (mod && k === 'z' && !e.shiftKey) return e.preventDefault(), undo();
+      if (mod && (k === 'y' || (k === 'z' && e.shiftKey))) return e.preventDefault(), redo();
+      if (k === 'escape') return setSelection(null);
+      if (selection?.kind !== 'item') return;
+      const uid = selection.uid;
+      if (k === 'delete' || k === 'backspace') return e.preventDefault(), itemActions.remove(uid);
+      if (mod && k === 'd') return e.preventDefault(), itemActions.duplicate(uid);
+      if (!mod && k === 'r') return itemActions.rotate(uid, e.shiftKey ? -90 : 90);
+      if (!mod && k === 'q') return itemActions.rotate(uid, -15);
+      if (!mod && k === 'e') return itemActions.rotate(uid, 15);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   // Thông báo thường tự tắt; thông báo lỗi / có link cần copy thì giữ đến khi người dùng đóng.
   useEffect(() => {
@@ -130,6 +271,7 @@ export function App() {
   const leaveShared = async () => {
     clearShareHash();
     const init = await loadInitialScene(state.data.scene, state.data);
+    resetHistory();
     setScene(init.scene);
     setSource(init.source);
     setSelection(null);
@@ -155,7 +297,7 @@ export function App() {
     if (!r.ok) return setToast({ kind: 'error', lines: ['Không nhập được cảnh:', ...r.errors] });
     if (source === 'shared') clearShareHash();
     setSource('local');
-    setScene(r.data);
+    commit(() => r.data);
     setSelection(null);
     setToast({ kind: 'info', lines: [`Đã nhập "${r.data.name}".`, ...r.warnings] });
   };
@@ -178,19 +320,29 @@ export function App() {
     clearLocal();
     if (source === 'shared') clearShareHash();
     setSource('local');
-    setScene(state.data.scene);
+    commit(() => state.data.scene);
     setSelection(null);
   };
+
+  const h = history.current;
 
   return (
     <div class="app">
       <header class="topbar">
         <h1>Jun Jẩy Planner</h1>
+        <button class="btn accent" aria-pressed={catalogOpen} onClick={() => setCatalogOpen(!catalogOpen)}>
+          + Thêm đồ
+        </button>
+        <div class="seg" role="group" aria-label="Hoàn tác">
+          <button onClick={undo} disabled={!h.past.length} title="Hoàn tác (Ctrl+Z)" aria-label="Hoàn tác">↶</button>
+          <button onClick={redo} disabled={!h.future.length} title="Làm lại (Ctrl+Y)" aria-label="Làm lại">↷</button>
+        </div>
         <div class="seg" role="group" aria-label="Camera">
           <button aria-pressed={camera === 'orbit'} onClick={() => switchCamera('orbit')}>3D</button>
           <button aria-pressed={camera === 'top'} onClick={() => switchCamera('top')}>Mặt bằng</button>
         </div>
         <div class="seg">
+          <button aria-pressed={snap} onClick={() => setSnap(!snap)} title="Bắt lưới 5 cm khi kéo đồ">Lưới 5 cm</button>
           <button
             aria-pressed={cutaway}
             title="Ẩn tường chắn tầm nhìn"
@@ -223,13 +375,18 @@ export function App() {
 
       <main class="stage">
         <div class="viewport" ref={hostRef} />
+        {catalogOpen && <Catalog items={catalog.items} scene={scene} onAdd={addItem} onClose={() => setCatalogOpen(false)} />}
         <Sidebar
           room={room}
           panels={state.data.panels}
           scene={scene}
           selection={selection}
           saveState={saveState}
-          onScene={setScene}
+          catalog={catalogMap}
+          warnings={analysis.warnings}
+          itemActions={itemActions}
+          onScene={(next, tag) => commit(() => next, tag)}
+          onSelect={setSelection}
           onClearSelection={() => setSelection(null)}
           onExport={() => exportSceneFile(scene)}
           onImport={importFile}
@@ -251,8 +408,8 @@ export function App() {
           </div>
         )}
         <footer class="status">
-          {room.walls.length} tường · {room.openings.length} ô cửa · {catalog.items.length} món catalog
-          {state.warnings.length > 0 && ` · ${state.warnings.length} cảnh báo`}
+          {scene.items.length} món đồ · {analysis.warnings.length} cảnh báo · {catalog.items.length} món catalog
+          {state.warnings.length > 0 && ` · ${state.warnings.length} cảnh báo dữ liệu`}
         </footer>
       </main>
     </div>

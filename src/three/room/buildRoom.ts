@@ -35,7 +35,7 @@ const COLORS = {
 const EPS = 0.0015; // m — tách lớp phủ khỏi mặt tường để tránh z-fighting
 
 /** Đối tượng chọn được bằng chạm/click (gắn vào mesh qua userData.pick). */
-export type PickTarget = { kind: 'wall'; id: string } | { kind: 'ceiling' };
+export type PickTarget = { kind: 'wall'; id: string } | { kind: 'ceiling' } | { kind: 'item'; uid: string };
 
 export interface WallSurface {
   group: THREE.Object3D;

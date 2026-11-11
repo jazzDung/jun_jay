@@ -172,6 +172,14 @@ export const Room = z.object({
   openings: z.array(Opening),
   fixtures: z.array(Fixture),
   views: z.array(CameraView).default([]),
+  /** Kiểm tra lối đi: từ `start` phải đi tới mọi `targets` với bề rộng ≥ minWidth (cm). */
+  circulation: z
+    .object({
+      start: z.object({ label: z.string(), point: Vec2 }),
+      targets: z.array(z.object({ label: z.string(), point: Vec2 })),
+      minWidth: z.number().positive().default(80),
+    })
+    .optional(),
   todo: Todo,
 });
 export type Room = z.infer<typeof Room>;
@@ -263,14 +271,19 @@ export type Catalog = z.infer<typeof Catalog>;
 
 // --------------------------------------------------------------- scene.json
 
-export const FloorPlacement = z.object({
+/** Đồ đặt sàn hoặc treo trần (catalog `mount` quyết định): tâm (x, z) cm, xoay `rot` độ (chiều kim đồng hồ nhìn từ trên). */
+export const ItemPlacement = z.object({
   uid: z.string(),
   catalogId: z.string(),
   x: z.number(),
   z: z.number(),
   rot: z.number().default(0),
+  /** Chỉ đồ treo trần: khoảng thả từ trần xuống tới đỉnh vật (cm). */
+  drop: z.number().nonnegative().optional(),
 });
+export type ItemPlacement = z.infer<typeof ItemPlacement>;
 
+/** Đồ treo tường: u = vị trí ngang dọc tường, v = độ cao tâm (cm). */
 export const WallPlacement = z.object({
   uid: z.string(),
   catalogId: z.string(),
@@ -278,18 +291,10 @@ export const WallPlacement = z.object({
   u: z.number(),
   v: z.number(),
 });
+export type WallPlacement = z.infer<typeof WallPlacement>;
 
-export const CeilingPlacement = z.object({
-  uid: z.string(),
-  catalogId: z.string(),
-  x: z.number(),
-  z: z.number(),
-  /** Khoảng thả từ trần xuống tới đỉnh vật. */
-  drop: z.number().nonnegative().default(0),
-  rot: z.number().default(0),
-});
-
-export const Placement = z.union([WallPlacement, CeilingPlacement, FloorPlacement]);
+export const Placement = z.union([WallPlacement, ItemPlacement]);
+export type Placement = z.infer<typeof Placement>;
 
 export const SceneLight = z.object({
   uid: z.string(),

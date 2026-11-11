@@ -3,11 +3,21 @@
  * hoặc khi chưa chọn gì thì là thông tin cảnh + Xuất / Nhập / Chia sẻ / Đặt lại.
  */
 import { useRef, useState } from 'preact/hooks';
-import type { Panels, Room, Scene, Wall } from '../data/schema';
+import type { Warning } from '../analysis/checks';
+import type { CatalogItem, ItemPlacement, Panels, Room, Scene, Wall } from '../data/schema';
 import { wallLength } from '../data/validate';
 import type { PickTarget } from '../three/viewer';
 import { ColorField } from './ColorField';
+import { ItemInspector } from './ItemInspector';
 import { PanelEditor } from './PanelEditor';
+
+/** Thao tác trên món đang chọn — App cài đặt (có undo/redo). */
+export interface ItemActions {
+  update: (uid: string, patch: Partial<ItemPlacement>, tag?: string) => void;
+  rotate: (uid: string, delta: number) => void;
+  duplicate: (uid: string) => void;
+  remove: (uid: string) => void;
+}
 
 interface Props {
   room: Room;
@@ -15,8 +25,13 @@ interface Props {
   scene: Scene;
   selection: PickTarget | null;
   saveState: 'saved' | 'pending' | 'unavailable' | 'shared';
-  onScene: (next: Scene) => void;
+  /** `tag`: các thay đổi liên tiếp cùng tag (kéo màu, kéo thanh trượt) gộp thành một bước undo. */
+  onScene: (next: Scene, tag?: string) => void;
   onClearSelection: () => void;
+  onSelect: (t: PickTarget) => void;
+  catalog: Map<string, CatalogItem>;
+  warnings: Warning[];
+  itemActions: ItemActions;
   onExport: () => void;
   onImport: (file: File) => void;
   onShare: () => void;
@@ -29,7 +44,13 @@ interface Props {
 export function Sidebar(props: Props) {
   return (
     <aside class="sidebar" aria-label="Thuộc tính">
-      {props.selection ? <SurfaceInspector {...props} selection={props.selection} /> : <SceneInfo {...props} />}
+      {props.selection?.kind === 'item' ? (
+        <ItemPanel {...props} uid={props.selection.uid} />
+      ) : props.selection ? (
+        <SurfaceInspector {...props} selection={props.selection} />
+      ) : (
+        <SceneInfo {...props} />
+      )}
     </aside>
   );
 }
@@ -39,6 +60,7 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
   let value: string;
   let isOverridden: boolean;
   let setColor: (hex: string | undefined) => void;
+  const tag = selection.kind === 'wall' ? `wall:${selection.id}` : 'ceiling';
   let extra = null;
   let panelEditor = null;
 
@@ -54,7 +76,7 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
       const walls = { ...scene.room.walls };
       if (Object.keys(next).length) walls[wall.id] = next;
       else delete walls[wall.id];
-      onScene({ ...scene, room: { ...scene.room, walls } });
+      onScene({ ...scene, room: { ...scene.room, walls } }, tag);
     };
     setColor = (hex) => patch({ color: hex });
     const effectivePanel = o.panel !== undefined ? o.panel : wall.panel;
@@ -94,7 +116,7 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
     title = `Trần — ${room.zones[0].label}`;
     value = scene.room.ceilingColor ?? room.ceiling.color;
     isOverridden = scene.room.ceilingColor !== undefined;
-    setColor = (hex) => onScene({ ...scene, room: { ...scene.room, ceilingColor: hex } });
+    setColor = (hex) => onScene({ ...scene, room: { ...scene.room, ceilingColor: hex } }, tag);
   }
 
   return (
@@ -116,7 +138,26 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
   );
 }
 
-function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, exporting }: Props) {
+function ItemPanel({ room, scene, catalog, warnings, itemActions, onClearSelection, uid }: Props & { uid: string }) {
+  const p = scene.items.find((x): x is ItemPlacement => x.uid === uid && !('wall' in x));
+  const item = p && catalog.get(p.catalogId);
+  if (!p || !item) return null;
+  return (
+    <ItemInspector
+      room={room}
+      item={item}
+      placement={p}
+      warnings={warnings.filter((w) => w.uids.includes(uid))}
+      onChange={(patch, tag) => itemActions.update(uid, patch, tag)}
+      onRotate={(d) => itemActions.rotate(uid, d)}
+      onDuplicate={() => itemActions.duplicate(uid)}
+      onRemove={() => itemActions.remove(uid)}
+      onClose={onClearSelection}
+    />
+  );
+}
+
+function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, exporting }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const changedWalls = Object.keys(scene.room.walls).length;
@@ -137,7 +178,7 @@ function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShar
         />
       </label>
       <p class="hint">
-        {changedWalls > 0 ? `${changedWalls} mảng tường đã đổi.` : 'Chưa đổi gì so với hiện trạng.'} Chạm vào một mảng tường hoặc trần để chỉnh.
+        {changedWalls > 0 ? `${changedWalls} mảng tường đã đổi, ` : ''}{scene.items.length} món đồ. Chạm vào tường, trần hoặc món đồ để chỉnh; bấm "+ Thêm đồ" để đặt đồ.
       </p>
       <div class="btn-grid">
         <button class="btn" onClick={onShare}>Chia sẻ link</button>
@@ -158,6 +199,22 @@ function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShar
           <button class="btn ghost" onClick={() => setConfirmReset(true)}>Đặt lại</button>
         )}
       </div>
+      {warnings.length > 0 && (
+        <>
+          <h3>Cảnh báo ({warnings.length})</h3>
+          <ul class="warn-list">
+            {warnings.map((w) => (
+              <li key={w.message}>
+                {w.uids.length ? (
+                  <button class="link" onClick={() => onSelect({ kind: 'item', uid: w.uids[0] })}>⚠ {w.message}</button>
+                ) : (
+                  <>⚠ {w.message}</>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <h3>Ảnh</h3>
       <div class="btn-grid">
         <button class="btn accent" onClick={onExportAi} disabled={exporting} title="Bộ ảnh các góc nhìn + prompt mô tả chi tiết, nén .zip">
