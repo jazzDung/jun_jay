@@ -20,18 +20,20 @@ const Todo = z.array(z.string()).optional();
 
 // ---------------------------------------------------------------- room.json
 
+/** Ốp pano / lam sóng lên một mảng tường. Profile và màu gỗ tra trong panels.json. */
 export const Panel = z.object({
-  /** planks = ván phẳng (rãnh V tuỳ chọn); fluted = lam sóng nổi 3D. */
-  style: z.enum(['planks', 'fluted']),
-  /** id texture vân gỗ: thủ tục ('pine_knotty', 'oak'…) hoặc ảnh ('lam_teak'…). */
-  grain: z.string(),
-  /** Màu nhuộm nhân thêm lên texture; null = giữ màu gốc của texture. */
+  /** id profile trong panels.json (vd 'lam5' = lam sóng 5 sóng). */
+  profile: z.string().default('lam5'),
+  /** id màu gỗ trong panels.json (vd 'lam_teak'). */
+  finish: z.string(),
+  /** Màu nhuộm nhân thêm lên texture; null = giữ màu gốc. */
   tone: Hex.nullable().default(null),
-  plankWidth: z.number().positive(),
-  vGroove: z.boolean().default(true),
-  finish: z.enum(['matte', 'satin', 'gloss']).default('matte'),
-  coverage: z.enum(['full', 'wainscot']),
+  sheen: z.enum(['matte', 'satin', 'gloss']).default('matte'),
+  /** full = kín từ sàn tới trần; wainscot = ốp lửng tới `wainscotHeight`. */
+  coverage: z.enum(['full', 'wainscot']).default('full'),
   wainscotHeight: z.number().positive().default(120),
+  /** Đoạn ốp dọc tường (u, cm); null = cả tường. */
+  uRange: Range.nullable().default(null),
 });
 export type Panel = z.infer<typeof Panel>;
 
@@ -153,6 +155,44 @@ export const Room = z.object({
 });
 export type Room = z.infer<typeof Room>;
 
+// -------------------------------------------------------------- panels.json
+
+export const PanelProfile = z.object({
+  id: z.string(),
+  name: z.string(),
+  style: z.enum(['fluted', 'planks']),
+  /** Bề rộng một tấm (cm). */
+  width: z.number().positive(),
+  /** Số sóng trên một tấm (planks: 1). */
+  ridges: z.number().int().positive(),
+  /** Bề rộng mặt sóng (cm); rãnh = width/ridges − ridgeWidth. */
+  ridgeWidth: z.number().positive(),
+  /** Độ nhô của sóng so với đáy rãnh (cm). */
+  ridgeDepth: z.number().nonnegative(),
+  /** Độ dày phần đế (cm). */
+  base: z.number().positive(),
+  todo: Todo,
+});
+export type PanelProfile = z.infer<typeof PanelProfile>;
+
+export const PanelFinish = z.object({
+  id: z.string(),
+  name: z.string(),
+  /** Ảnh vân gỗ trong public/ (không có = màu trơn). */
+  texture: z.string().optional(),
+  color: Hex,
+  /** Kích thước thật (cm) mà một ô texture phủ. */
+  period: z.object({ w: z.number().positive(), h: z.number().positive() }).optional(),
+});
+export type PanelFinish = z.infer<typeof PanelFinish>;
+
+export const Panels = z.object({
+  version: z.literal(1),
+  profiles: z.array(PanelProfile).min(1),
+  finishes: z.array(PanelFinish).min(1),
+});
+export type Panels = z.infer<typeof Panels>;
+
 // ------------------------------------------------------------- catalog.json
 
 export const Material = z.object({
@@ -256,8 +296,10 @@ export const Scene = z.object({
       walls: z.record(z.string(), WallOverride).default({}),
       ceilingColor: Hex.optional(),
       // Sàn gỗ hiện trạng giữ nguyên — không có ghi đè màu sàn.
+      /** id thiết bị hiện trạng (room.json fixtures) đang bị ẩn — vd tháo đèn tuýp. */
+      hiddenFixtures: z.array(z.string()).default([]),
     })
-    .default({ walls: {} }),
+    .default({ walls: {}, hiddenFixtures: [] }),
   items: z.array(Placement).default([]),
   lights: z.array(SceneLight).default([]),
   mode: z.enum(['day', 'night']).default('day'),

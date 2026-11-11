@@ -101,22 +101,24 @@ Ba file JSON trong `src/data/` (hoặc `public/data/`), nạp lúc khởi độn
 }
 ```
 
-### `panel` (ốp pano trên một mảng tường)
+### `panel` (ốp lam sóng / ván trên một mảng tường) — *đã cập nhật ở lát 4*
 ```json
 {
-  "grain": "pine_knotty",
-  "tone": "#C9813F",
-  "plankWidth": 15,
-  "vGroove": true,
-  "finish": "matte",
+  "profile": "lam5",
+  "finish": "lam_teak",
+  "tone": null,
+  "sheen": "matte",
   "coverage": "full",
-  "wainscotHeight": 120
+  "wainscotHeight": 120,
+  "uRange": [0, 400]
 }
 ```
-- `grain`: `pine_knotty` | `pine_clear` | `oak` | `walnut` | `slat` (lam sóng nổi 3D).
-- **Vật liệu thật sẽ dùng: tấm lam sóng PVC 5 sóng** (ảnh `ref/wood_panel/`), 6 màu: teak, sồi đỏ nâu, xám tro, sồi vàng, trắng, beech/mật ong. Bản rộng, độ dày, chiều dài tấm **(TODO hỏi bên thi công)**. Texture lấy từ chính ảnh chụp (script Python trong `tools/` cắt + nắn phẳng + làm liền mạch), biên dạng sóng dựng bằng geometry thật.
-- `coverage`: `full` | `wainscot` (dùng `wainscotHeight`).
-- Vân gỗ **tạo bằng code** (canvas texture từ noise + mắt gỗ), đổi tham số là cập nhật ngay. Ván **dọc**. `slat` dựng bằng geometry thật để có bóng đổ.
+- `profile`, `finish`: id tra trong **`public/data/panels.json`**.
+  - `profiles`: biên dạng tấm — `lam5` = lam sóng 5 sóng (rộng 20.4, mặt sóng 2.8, sóng nhô 1.2, đế 1.0 cm — **thông số phổ biến, TODO xác nhận với bên thi công**), `planks15` = ván phẳng rãnh V.
+  - `finishes`: màu gỗ — 5 màu có texture lấy từ ảnh mẫu thật (`ref/wood_panel/`, xử lý bằng `tools/make_panel_textures.py`) + trắng trơn.
+- `coverage`: `full` (kín trần) | `wainscot` (ốp lửng tới `wainscotHeight`).
+- `uRange`: đoạn ốp dọc tường (cm); `null` = cả tường. UI có sẵn: cả tường / nửa phía cửa sổ / nửa phía trong / tuỳ chỉnh, và "ốp giống vậy cho cả 2 tường dài".
+- Biên dạng sóng dựng bằng geometry thật (có bóng trong rãnh); phào chỉ/len nằm dưới lớp ốp tự ẩn.
 
 ### `catalog.json`
 ```json

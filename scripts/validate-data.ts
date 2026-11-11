@@ -18,7 +18,12 @@ function read(name: string): unknown {
   }
 }
 
-const result = validateBundle({ room: read('room'), catalog: read('catalog'), scene: read('scene') });
+const result = validateBundle({
+  room: read('room'),
+  catalog: read('catalog'),
+  scene: read('scene'),
+  panels: read('panels'),
+});
 if (!result.ok) {
   console.error(`✗ ${result.errors.length} lỗi:`);
   for (const e of result.errors) console.error(`  - ${e}`);
@@ -30,9 +35,11 @@ const todoCount =
   (room.todo?.length ?? 0) +
   room.walls.reduce((n, w) => n + (w.todo?.length ?? 0), 0) +
   room.openings.reduce((n, o) => n + (o.todo?.length ?? 0), 0) +
-  catalog.items.reduce((n, i) => n + (i.todo?.length ?? 0), 0);
+  catalog.items.reduce((n, i) => n + (i.todo?.length ?? 0), 0) +
+  result.data.panels.profiles.reduce((n, p) => n + (p.todo?.length ?? 0), 0);
 console.log(
   `✓ Dữ liệu hợp lệ: ${room.walls.length} tường, ${room.openings.length} ô cửa, ` +
-    `${catalog.items.length} món catalog (${catalog.items.filter((i) => i.owned).length} owned). ` +
+    `${catalog.items.length} món catalog (${catalog.items.filter((i) => i.owned).length} owned), ` +
+    `${result.data.panels.finishes.length} màu ốp. ` +
     `Còn ${todoCount} mục TODO cần đo.`,
 );

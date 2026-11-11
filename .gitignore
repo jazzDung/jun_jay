@@ -6,3 +6,7 @@ dist/
 # Ảnh tham chiếu gốc (nhà riêng, có người) — không commit.
 # Chỉ commit texture / ảnh đã xử lý trong public/.
 ref/
+
+# Python
+__pycache__/
+*.pyc

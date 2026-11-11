@@ -46,6 +46,10 @@ export interface WallSurface {
   mouldings: THREE.Object3D | null;
   baseColor: string;
   baseMouldings: boolean;
+  /** Để dựng lại lớp ốp khi cảnh thay đổi. */
+  frame: WallFrame;
+  openings: Opening[];
+  wall: Wall;
 }
 
 export interface RoomBuild {
@@ -55,6 +59,8 @@ export interface RoomBuild {
   walls: Map<string, WallSurface>;
   /** Trần của khu chính (zone đầu tiên trong room.json). Sàn gỗ giữ nguyên, không chọn được. */
   ceilingSurface: { mesh: THREE.Mesh; mat: THREE.MeshStandardMaterial; baseColor: string };
+  /** Thiết bị hiện trạng theo id (máy lạnh, đèn tuýp, downlight) — để ẩn/hiện. */
+  fixtures: Map<string, THREE.Object3D>;
   /** Thông tin để ẩn tường đứng chắn giữa camera và phòng. */
   cutaway: { group: THREE.Object3D; mid: THREE.Vector3; normal: THREE.Vector3 }[];
   /** Phông nền ngoài cửa sổ — chỉ nên hiện khi camera ở trong phòng. */
@@ -75,6 +81,7 @@ export function buildRoom(room: Room): RoomBuild {
 
   const walls = named('walls');
   const wallSurfaces = new Map<string, WallSurface>();
+  const fixtureObjs = new Map<string, THREE.Object3D>();
   const frames = room.walls.map((w) => new WallFrame(w, room, zones));
   const cutaway: RoomBuild['cutaway'] = [];
   for (const frame of frames) {
@@ -100,8 +107,9 @@ export function buildRoom(room: Room): RoomBuild {
     for (const f of fixtures) {
       const x = frame.uToX(f.u ?? 0);
       const mesh = buildFixtureMesh(f.type, f.size, f.color);
-      mesh.position.set(x, cm(f.v ?? 0), cm(f.size.d) / 2);
+      mesh.position.set(x, cm(f.v ?? 0), cm(f.size.d) / 2 + 0.023); // đứng trước lớp ốp (dày tối đa ~2.2 cm)
       mesh.name = `fixture:${f.id}`;
+      fixtureObjs.set(f.id, mesh);
       g.add(mesh);
     }
     walls.add(g);
@@ -114,6 +122,9 @@ export function buildRoom(room: Room): RoomBuild {
       mouldings,
       baseColor: frame.wall.color,
       baseMouldings: m?.enabled ?? false,
+      frame,
+      openings,
+      wall: frame.wall,
     });
     const [ax, az] = frame.wall.from;
     const [bx, bz] = frame.wall.to;
@@ -134,6 +145,7 @@ export function buildRoom(room: Room): RoomBuild {
     const mesh = buildFixtureMesh(f.type, f.size, f.color);
     mesh.position.set(cm(f.x!), H - cm(f.size.h) / 2, cm(f.z!));
     mesh.name = `fixture:${f.id}`;
+    fixtureObjs.set(f.id, mesh);
     ceiling.add(mesh);
   }
 
@@ -145,6 +157,7 @@ export function buildRoom(room: Room): RoomBuild {
     group,
     ceiling,
     walls: wallSurfaces,
+    fixtures: fixtureObjs,
     ceilingSurface: { mesh: ceilingMesh, mat: ceilingMesh.material as THREE.MeshStandardMaterial, baseColor: room.ceiling.color },
     cutaway,
     backdrop,
@@ -394,13 +407,22 @@ function buildMouldings(frame: WallFrame, openings: Opening[], mat: THREE.Materi
     return { a, b, y0: cm(o.sill), y1: cm(o.sill + o.height) };
   });
 
+  // Mỗi khung / đoạn len là một group con có userData.rect (x0, x1, y0, y1 cục bộ) —
+  // viewer dùng để ẩn phần nằm dưới lớp ốp lam sóng.
+  const part = (x0: number, x1: number, y0: number, y1: number): THREE.Group => {
+    const p = new THREE.Group();
+    p.userData.rect = { x0, x1, y0, y1 };
+    g.add(p);
+    return p;
+  };
   const rect = (x0: number, x1: number, y0: number, y1: number) => {
     if (holes.some((h) => overlaps(x0, x1, h.a, h.b) && overlaps(y0, y1, h.y0, h.y1))) return;
     const z = depth / 2 + EPS;
-    g.add(box(x1 - x0, pw, depth, mat, (x0 + x1) / 2, y0 + pw / 2, z));
-    g.add(box(x1 - x0, pw, depth, mat, (x0 + x1) / 2, y1 - pw / 2, z));
-    g.add(box(pw, y1 - y0 - pw * 2, depth, mat, x0 + pw / 2, (y0 + y1) / 2, z));
-    g.add(box(pw, y1 - y0 - pw * 2, depth, mat, x1 - pw / 2, (y0 + y1) / 2, z));
+    const p = part(x0, x1, y0, y1);
+    p.add(box(x1 - x0, pw, depth, mat, (x0 + x1) / 2, y0 + pw / 2, z));
+    p.add(box(x1 - x0, pw, depth, mat, (x0 + x1) / 2, y1 - pw / 2, z));
+    p.add(box(pw, y1 - y0 - pw * 2, depth, mat, x0 + pw / 2, (y0 + y1) / 2, z));
+    p.add(box(pw, y1 - y0 - pw * 2, depth, mat, x1 - pw / 2, (y0 + y1) / 2, z));
   };
   if (bayW > 0.1) {
     for (let i = 0; i < m.bays; i++) {
@@ -415,9 +437,13 @@ function buildMouldings(frame: WallFrame, openings: Opening[], mat: THREE.Materi
     const bh = cm(m.baseboardHeight);
     const bmat = std(COLORS.baseboard, { roughness: 0.5 });
     const cuts = holes.filter((h) => h.y0 <= 0).sort((p, q) => p.a - q.a);
+    const CHUNK = 0.25; // chia len thành đoạn ngắn để ẩn đúng phần bị ốp che
     let x = 0;
     for (const seg of [...cuts, { a: frame.length, b: frame.length }]) {
-      if (seg.a - x > 0.01) g.add(box(seg.a - x, bh, 0.012, bmat, (x + seg.a) / 2, bh / 2, 0.006 + EPS));
+      for (let c = x; seg.a - c > 0.01; c += CHUNK) {
+        const e = Math.min(seg.a, c + CHUNK);
+        part(c, e, 0, bh).add(box(e - c, bh, 0.012, bmat, (c + e) / 2, bh / 2, 0.006 + EPS));
+      }
       x = Math.max(x, seg.b);
     }
   }

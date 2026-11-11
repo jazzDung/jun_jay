@@ -143,3 +143,27 @@ body { background: var(--bg); color: var(--text); overscroll-behavior: none; }
   .status { display: none; }
   .toast { bottom: auto; top: 12px; }
 }
+
+/* ------------------------------------------------------------ panel editor */
+.seg-full { display: flex; width: 100%; }
+.seg-full button { flex: 1; padding: 8px 6px; }
+.seg-wrap { flex-wrap: wrap; }
+.seg-wrap button { flex: 1 1 45%; }
+.seg-full + .seg-full, .finish-grid { margin-top: 8px; }
+.finish-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.finish {
+  display: grid; gap: 4px; padding: 4px; border-radius: 8px; cursor: pointer; font: inherit;
+  background: transparent; border: 1px solid var(--line); color: var(--muted); touch-action: manipulation;
+}
+.finish.active { border-color: var(--accent); color: var(--text); }
+.finish-swatch { display: block; height: 44px; border-radius: 5px; }
+.finish-name { font-size: 12px; text-align: center; }
+.range-row, .slider-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.range-row label { display: grid; gap: 2px; flex: 1; }
+.range-row input {
+  font: inherit; font-size: 15px; color: var(--text); background: #1f1a17; width: 100%;
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-height: 40px;
+}
+.slider-row input { flex: 1; accent-color: var(--accent); min-height: 32px; }
+.unit { white-space: nowrap; font-size: 13px; color: var(--muted); }
+.toggle-row.compact { margin-top: 4px; min-height: 36px; }

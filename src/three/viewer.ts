@@ -5,7 +5,8 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { Room, Scene } from '../data/schema';
+import type { Panel, Panels, Room, Scene } from '../data/schema';
+import { buildPanel } from './room/panel';
 import { buildRoom, type PickTarget, type RoomBuild } from './room/buildRoom';
 
 export type CameraMode = 'orbit' | 'top';
@@ -31,6 +32,9 @@ export class Viewer {
   private cutawayEnabled = true;
   private bounds = new THREE.Box3();
   private selection: PickTarget | null = null;
+  private panels: Panels | null = null;
+  /** Lớp ốp đang dựng trên mỗi tường + khoá JSON để biết khi nào cần dựng lại. */
+  private readonly panelMeshes = new Map<string, { key: string; mesh: THREE.Mesh | null }>();
   private readonly selectionBox = new THREE.Box3Helper(new THREE.Box3(), SELECT_COLOR);
   private readonly raycaster = new THREE.Raycaster();
   private pointerDown: { x: number; y: number; id: number } | null = null;
@@ -75,7 +79,9 @@ export class Viewer {
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
-  setRoom(room: Room): void {
+  setRoom(room: Room, panels: Panels): void {
+    this.panels = panels;
+    this.panelMeshes.clear();
     this.scene.remove(this.roomGroup);
     disposeTree(this.roomGroup);
     this.built = buildRoom(room);
@@ -95,13 +101,56 @@ export class Viewer {
       w.surface.color.set(color);
       for (const f of w.followers) f.color.set(color);
       if (w.mouldings) w.mouldings.visible = o?.mouldings ?? w.baseMouldings;
+      this.applyPanel(id, o?.panel !== undefined ? o.panel : w.wall.panel);
     }
+    const hidden = new Set(scene.room.hiddenFixtures);
+    for (const [id, obj] of b.fixtures) obj.visible = !hidden.has(id);
     const ce = b.ceilingSurface;
     const ceilingColor = scene.room.ceilingColor;
     // trần có texture lưới: nhân màu vào texture (trắng = giữ nguyên)
     ce.mat.color.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
     ce.mat.emissive.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
     this.updateSelectionBox();
+  }
+
+  /** Dựng lại lớp ốp của một tường nếu cấu hình đổi. */
+  private applyPanel(wallId: string, panel: Panel | null): void {
+    const w = this.built?.walls.get(wallId);
+    if (!w || !this.panels) return;
+    const key = panel ? JSON.stringify(panel) : '';
+    const prev = this.panelMeshes.get(wallId);
+    if (prev?.key === key) return;
+    if (prev?.mesh) {
+      prev.mesh.removeFromParent();
+      prev.mesh.geometry.dispose();
+      (prev.mesh.material as THREE.Material).dispose(); // texture dùng chung, giữ lại trong cache
+    }
+    let mesh: THREE.Mesh | null = null;
+    if (panel) {
+      const profile = this.panels.profiles.find((p) => p.id === panel.profile);
+      const finish = this.panels.finishes.find((f) => f.id === panel.finish);
+      if (profile && finish) {
+        mesh = buildPanel(w.frame, panel, profile, finish, w.openings, import.meta.env.BASE_URL);
+        mesh.userData.pick = { kind: 'wall', id: wallId } satisfies PickTarget;
+        w.group.add(mesh);
+      }
+    }
+    this.panelMeshes.set(wallId, { key, mesh });
+
+    // ẩn phào chỉ / len nằm dưới lớp ốp (chúng nhô qua rãnh lam)
+    if (w.mouldings) {
+      let area: { x0: number; x1: number; y1: number } | null = null;
+      if (panel) {
+        const [x0, x1] = panel.uRange ? w.frame.rangeToX(panel.uRange) : [0, w.frame.length];
+        const y1 = panel.coverage === 'full' ? w.frame.height : panel.wainscotHeight / 100;
+        area = { x0, x1, y1 };
+      }
+      for (const part of w.mouldings.children) {
+        const r = part.userData.rect as { x0: number; x1: number; y0: number; y1: number } | undefined;
+        if (!r) continue;
+        part.visible = !(area && r.x0 < area.x1 - 1e-4 && r.x1 > area.x0 + 1e-4 && r.y0 < area.y1 - 1e-4);
+      }
+    }
   }
 
   setSelection(target: PickTarget | null): void {

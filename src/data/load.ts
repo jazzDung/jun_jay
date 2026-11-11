@@ -1,12 +1,12 @@
 import { validateBundle, type DataBundle, type Result } from './validate';
 
-const FILES = ['room', 'catalog', 'scene'] as const;
+const FILES = ['room', 'catalog', 'scene', 'panels'] as const;
 
-/** Nạp room/catalog/scene mặc định từ public/data/. */
+/** Nạp room/catalog/scene/panels mặc định từ public/data/. */
 export async function loadDefaultData(): Promise<Result<DataBundle>> {
   const base = import.meta.env.BASE_URL;
   try {
-    const [room, catalog, scene] = await Promise.all(
+    const [room, catalog, scene, panels] = await Promise.all(
       FILES.map(async (name) => {
         const res = await fetch(`${base}data/${name}.json`, { cache: 'no-cache' });
         if (!res.ok) throw new Error(`Không tải được data/${name}.json (HTTP ${res.status})`);
@@ -17,7 +17,7 @@ export async function loadDefaultData(): Promise<Result<DataBundle>> {
         }
       }),
     );
-    return validateBundle({ room, catalog, scene });
+    return validateBundle({ room, catalog, scene, panels });
   } catch (e) {
     return { ok: false, errors: [(e as Error).message] };
   }

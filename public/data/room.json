@@ -31,7 +31,7 @@
       "mouldings": null
     },
     {
-      "id": "wall_top", "label": "Tường trên (z=0)",
+      "id": "wall_top", "label": "Tường phải — phía WC (z=0)",
       "from": [0, 0], "to": [800, 0], "faces": "main", "thickness": 15,
       "color": "#9DB4AA", "panel": null,
       "claddings": [
@@ -45,7 +45,7 @@
       }
     },
     {
-      "id": "wall_bottom", "label": "Tường dưới (z=400)",
+      "id": "wall_bottom", "label": "Tường trái — phía lối vào (z=400)",
       "from": [0, 400], "to": [800, 400], "faces": "main", "thickness": 15,
       "color": "#9DB4AA", "panel": null,
       "claddings": [
@@ -139,9 +139,9 @@
   "fixtures": [
     { "id": "ac_window", "type": "ac_unit", "label": "Máy lạnh Daikin", "wall": "wall_window", "u": 150, "v": 228,
       "size": { "w": 80, "h": 28, "d": 20 }, "color": "#EDE6CF", "todo": ["vị trí chính xác"] },
-    { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường trên", "wall": "wall_top", "u": 420, "v": 245,
+    { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường phải (phía WC)", "wall": "wall_top", "u": 420, "v": 245,
       "size": { "w": 120, "h": 5, "d": 6 } },
-    { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường dưới", "wall": "wall_bottom", "u": 420, "v": 245,
+    { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường trái (phía lối vào)", "wall": "wall_bottom", "u": 420, "v": 245,
       "size": { "w": 120, "h": 5, "d": 6 } },
     { "id": "dl_1", "type": "downlight", "label": "Downlight", "x": 120, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
     { "id": "dl_2", "type": "downlight", "label": "Downlight", "x": 120, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },

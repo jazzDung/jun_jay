@@ -3,12 +3,15 @@
  * hoặc khi chưa chọn gì thì là thông tin cảnh + Xuất / Nhập / Chia sẻ / Đặt lại.
  */
 import { useRef, useState } from 'preact/hooks';
-import type { Room, Scene } from '../data/schema';
+import type { Panels, Room, Scene, Wall } from '../data/schema';
+import { wallLength } from '../data/validate';
 import type { PickTarget } from '../three/viewer';
 import { ColorField } from './ColorField';
+import { PanelEditor } from './PanelEditor';
 
 interface Props {
   room: Room;
+  panels: Panels;
   scene: Scene;
   selection: PickTarget | null;
   saveState: 'saved' | 'pending' | 'unavailable' | 'shared';
@@ -28,12 +31,13 @@ export function Sidebar(props: Props) {
   );
 }
 
-function SurfaceInspector({ room, scene, selection, onScene, onClearSelection }: Props & { selection: PickTarget }) {
+function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSelection }: Props & { selection: PickTarget }) {
   let title: string;
   let value: string;
   let isOverridden: boolean;
   let setColor: (hex: string | undefined) => void;
   let extra = null;
+  let panelEditor = null;
 
   if (selection.kind === 'wall') {
     const wall = room.walls.find((w) => w.id === selection.id)!;
@@ -50,6 +54,23 @@ function SurfaceInspector({ room, scene, selection, onScene, onClearSelection }:
       onScene({ ...scene, room: { ...scene.room, walls } });
     };
     setColor = (hex) => patch({ color: hex });
+    const effectivePanel = o.panel !== undefined ? o.panel : wall.panel;
+    panelEditor = (
+      <PanelEditor
+        room={room}
+        wall={wall}
+        panels={panels}
+        panel={effectivePanel}
+        // bỏ ốp: nếu room.json không có ốp thì xoá ghi đè, ngược lại ghi đè bằng null
+        onChange={(p) => patch({ panel: p === null && wall.panel === null ? undefined : p })}
+        longWalls={longWalls(room)}
+        onApplyTo={(ids, p) => {
+          const walls = { ...scene.room.walls };
+          for (const id of ids) walls[id] = { ...walls[id], panel: { ...p } };
+          onScene({ ...scene, room: { ...scene.room, walls } });
+        }}
+      />
+    );
     if (wall.mouldings) {
       const on = o.mouldings ?? wall.mouldings.enabled;
       extra = (
@@ -87,11 +108,12 @@ function SurfaceInspector({ room, scene, selection, onScene, onClearSelection }:
       <button class="btn ghost" disabled={!isOverridden} onClick={() => setColor(undefined)}>
         Khôi phục màu hiện trạng
       </button>
+      {panelEditor}
     </section>
   );
 }
 
-function SceneInfo({ scene, saveState, onScene, onExport, onImport, onShare, onReset }: Props) {
+function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShare, onReset }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const changedWalls = Object.keys(scene.room.walls).length;
@@ -133,6 +155,7 @@ function SceneInfo({ scene, saveState, onScene, onExport, onImport, onShare, onR
           <button class="btn ghost" onClick={() => setConfirmReset(true)}>Đặt lại</button>
         )}
       </div>
+      <FixtureToggles room={room} scene={scene} onScene={onScene} />
       <input
         ref={fileRef}
         type="file"
@@ -148,3 +171,47 @@ function SceneInfo({ scene, saveState, onScene, onExport, onImport, onShare, onR
     </section>
   );
 }
+
+/** Các tường dài nhất của khu chính (zone đầu tiên) — "2 mặt tường" của quán. */
+function longWalls(room: Room): Wall[] {
+  const main = room.walls.filter((w) => w.faces === room.zones[0].id);
+  const max = Math.max(...main.map(wallLength));
+  return main.filter((w) => wallLength(w) === max);
+}
+
+const FIXTURE_ICON: Record<string, string> = { tube_light: 'Đèn tuýp', downlight: 'Downlight', ac_unit: 'Máy lạnh' };
+
+/** Bật/tắt thiết bị hiện trạng (đèn tuýp, downlight, máy lạnh) — downlight gộp thành một nhóm. */
+function FixtureToggles({ room, scene, onScene }: { room: Room; scene: Scene; onScene: (s: Scene) => void }) {
+  const hidden = new Set(scene.room.hiddenFixtures);
+  const groups: { label: string; ids: string[] }[] = [];
+  const downlights = room.fixtures.filter((f) => f.type === 'downlight').map((f) => f.id);
+  for (const f of room.fixtures) {
+    if (f.type === 'downlight' || !(f.type in FIXTURE_ICON)) continue;
+    groups.push({ label: f.label, ids: [f.id] });
+  }
+  if (downlights.length) groups.push({ label: `Downlight âm trần (${downlights.length})`, ids: downlights });
+  if (!groups.length) return null;
+
+  const toggle = (ids: string[], show: boolean) => {
+    const next = new Set(hidden);
+    for (const id of ids) (show ? next.delete(id) : next.add(id));
+    onScene({ ...scene, room: { ...scene.room, hiddenFixtures: [...next] } });
+  };
+
+  return (
+    <>
+      <h3>Đèn & thiết bị hiện trạng</h3>
+      {groups.map((g) => {
+        const visible = g.ids.every((id) => !hidden.has(id));
+        return (
+          <label key={g.label} class="toggle-row compact">
+            <input type="checkbox" checked={visible} onChange={() => toggle(g.ids, !visible)} />
+            {g.label}
+          </label>
+        );
+      })}
+    </>
+  );
+}
+

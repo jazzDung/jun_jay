@@ -42,7 +42,7 @@ export function App() {
     (async () => {
       const r = await loadDefaultData();
       if (!r.ok) return setState({ status: 'error', errors: r.errors });
-      const init = await loadInitialScene(r.data.scene, r.data.room, r.data.catalog);
+      const init = await loadInitialScene(r.data.scene, r.data);
       setState({ status: 'ready', data: r.data, warnings: r.warnings });
       setScene(init.scene);
       setSource(init.source);
@@ -64,7 +64,7 @@ export function App() {
   useEffect(() => {
     if (state.status !== 'ready' || !hostRef.current) return;
     const viewer = new Viewer(hostRef.current);
-    viewer.setRoom(state.data.room);
+    viewer.setRoom(state.data.room, state.data.panels);
     viewer.onPick = (t) => setSelection(t);
     viewerRef.current = viewer;
     // Dev: điều khiển viewer từ console để kiểm tra góc nhìn.
@@ -127,7 +127,7 @@ export function App() {
 
   const leaveShared = async () => {
     clearShareHash();
-    const init = await loadInitialScene(state.data.scene, room, catalog);
+    const init = await loadInitialScene(state.data.scene, state.data);
     setScene(init.scene);
     setSource(init.source);
     setSelection(null);
@@ -149,7 +149,7 @@ export function App() {
   };
 
   const importFile = async (file: File) => {
-    const r = await importSceneFile(file, room, catalog);
+    const r = await importSceneFile(file, state.data);
     if (!r.ok) return setToast({ kind: 'error', lines: ['Không nhập được cảnh:', ...r.errors] });
     if (source === 'shared') clearShareHash();
     setSource('local');
@@ -209,6 +209,7 @@ export function App() {
         <div class="viewport" ref={hostRef} />
         <Sidebar
           room={room}
+          panels={state.data.panels}
           scene={scene}
           selection={selection}
           saveState={saveState}

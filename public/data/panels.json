@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "lam5",
+      "name": "Lam sóng 5 sóng",
+      "style": "fluted",
+      "width": 20.4,
+      "ridges": 5,
+      "ridgeWidth": 2.8,
+      "ridgeDepth": 1.2,
+      "base": 1.0,
+      "todo": ["Thông số phổ biến trên thị trường — chờ bên thi công xác nhận bản rộng, số sóng, độ dày"]
+    },
+    {
+      "id": "planks15",
+      "name": "Ván phẳng rãnh V 15 cm",
+      "style": "planks",
+      "width": 15,
+      "ridges": 1,
+      "ridgeWidth": 14.6,
+      "ridgeDepth": 0.4,
+      "base": 0.8
+    }
+  ],
+  "finishes": [
+    { "id": "lam_teak", "name": "Teak", "texture": "textures/lam/lam_teak.jpg", "color": "#8E6841",
+      "period": { "w": 11.7, "h": 25.9 } },
+    { "id": "lam_oak_red", "name": "Sồi đỏ nâu", "texture": "textures/lam/lam_oak_red.jpg", "color": "#784D2C",
+      "period": { "w": 11.7, "h": 24.8 } },
+    { "id": "lam_ash_gray", "name": "Xám tro", "texture": "textures/lam/lam_ash_gray.jpg", "color": "#74736B",
+      "period": { "w": 11.7, "h": 23.4 } },
+    { "id": "lam_oak_gold", "name": "Sồi vàng", "texture": "textures/lam/lam_oak_gold.jpg", "color": "#8A683D",
+      "period": { "w": 11.7, "h": 27.7 } },
+    { "id": "lam_beech", "name": "Beech mật ong", "texture": "textures/lam/lam_beech.jpg", "color": "#95622D",
+      "period": { "w": 11.8, "h": 23.0 } },
+    { "id": "lam_white", "name": "Trắng", "color": "#EEEDE8" }
+  ]
+}

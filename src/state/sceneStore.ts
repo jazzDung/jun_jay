@@ -7,8 +7,8 @@
  * Mọi thao tác storage đều bọc try/catch: chế độ ẩn danh hoặc bị chặn site data thì
  * app vẫn chạy, chỉ không lưu được.
  */
-import type { Catalog, Room, Scene } from '../data/schema';
-import { parseScene, type Result } from '../data/validate';
+import type { Scene } from '../data/schema';
+import { parseScene, type Refs, type Result } from '../data/validate';
 
 const STORAGE_KEY = 'junjay.scene.v1';
 const HASH_KEY = 's';
@@ -22,13 +22,13 @@ export interface InitialScene {
   notices: string[];
 }
 
-export async function loadInitialScene(defaultScene: Scene, room: Room, catalog: Catalog): Promise<InitialScene> {
+export async function loadInitialScene(defaultScene: Scene, refs: Refs): Promise<InitialScene> {
   const notices: string[] = [];
 
   const shared = readShareHash();
   if (shared) {
     try {
-      const r = parseScene(await decodeScene(shared), room, catalog, 'link chia sẻ');
+      const r = parseScene(await decodeScene(shared), refs, 'link chia sẻ');
       if (r.ok) return { scene: r.data, source: 'shared', notices: r.warnings };
       notices.push('Link chia sẻ không hợp lệ:', ...r.errors);
     } catch {
@@ -38,7 +38,7 @@ export async function loadInitialScene(defaultScene: Scene, room: Room, catalog:
 
   const local = readLocal();
   if (local !== undefined) {
-    const r = parseScene(local, room, catalog, 'bản tự lưu');
+    const r = parseScene(local, refs, 'bản tự lưu');
     if (r.ok) return { scene: r.data, source: 'local', notices: [...notices, ...r.warnings] };
     notices.push('Bản tự lưu không còn khớp với dữ liệu phòng/catalog, đã dùng cảnh mặc định:', ...r.errors);
   }
@@ -95,14 +95,14 @@ export function exportSceneFile(scene: Scene): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function importSceneFile(file: File, room: Room, catalog: Catalog): Promise<Result<Scene>> {
+export async function importSceneFile(file: File, refs: Refs): Promise<Result<Scene>> {
   let raw: unknown;
   try {
     raw = JSON.parse(await file.text());
   } catch {
     return { ok: false, errors: [`${file.name} không phải file JSON hợp lệ.`] };
   }
-  return parseScene(raw, room, catalog, file.name);
+  return parseScene(raw, refs, file.name);
 }
 
 // -------------------------------------------------------------- share link

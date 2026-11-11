@@ -4,11 +4,12 @@
  * script `npm run validate-data` cùng dùng.
  */
 import type { z } from 'zod';
-import { Catalog, Room, Scene } from './schema';
+import { Catalog, Panels, Room, Scene, type Panel } from './schema';
 
 export interface DataBundle {
   room: Room;
   catalog: Catalog;
+  panels: Panels;
   scene: Scene;
 }
 
@@ -80,56 +81,87 @@ function checkRoom(room: Room): { errors: string[]; warnings: string[] } {
   return { errors, warnings };
 }
 
-export function validateBundle(raw: { room: unknown; catalog: unknown; scene: unknown }): Result<DataBundle> {
+/** Dữ liệu tham chiếu mà một cảnh phải khớp. */
+export interface Refs {
+  room: Room;
+  catalog: Catalog;
+  panels: Panels;
+}
+
+function checkPanel(panel: Panel, refs: Refs, where: string, len: number): string[] {
+  const errors: string[] = [];
+  if (!refs.panels.profiles.some((p) => p.id === panel.profile))
+    errors.push(`${where}: profile ốp "${panel.profile}" không có trong panels.json`);
+  if (!refs.panels.finishes.some((f) => f.id === panel.finish))
+    errors.push(`${where}: màu gỗ "${panel.finish}" không có trong panels.json`);
+  if (panel.uRange && (panel.uRange[0] < 0 || panel.uRange[1] > len + 0.01))
+    errors.push(`${where}: đoạn ốp ${panel.uRange.join('–')} nằm ngoài tường dài ${len}`);
+  return errors;
+}
+
+export function validateBundle(raw: { room: unknown; catalog: unknown; scene: unknown; panels: unknown }): Result<DataBundle> {
   const errors: string[] = [];
   const room = Room.safeParse(raw.room);
   const catalog = Catalog.safeParse(raw.catalog);
   const scene = Scene.safeParse(raw.scene);
+  const panels = Panels.safeParse(raw.panels);
   if (!room.success) errors.push(...formatZod('room.json', room.error));
   if (!catalog.success) errors.push(...formatZod('catalog.json', catalog.error));
   if (!scene.success) errors.push(...formatZod('scene.json', scene.error));
-  if (!room.success || !catalog.success || !scene.success) return { ok: false, errors };
+  if (!panels.success) errors.push(...formatZod('panels.json', panels.error));
+  if (!room.success || !catalog.success || !scene.success || !panels.success) return { ok: false, errors };
 
   const roomCheck = checkRoom(room.data);
   errors.push(...roomCheck.errors);
   const warnings = [...roomCheck.warnings];
 
   for (const d of duplicates(catalog.data.items.map((i) => i.id))) errors.push(`catalog.json: id "${d}" bị trùng`);
+  for (const d of duplicates(panels.data.profiles.map((p) => p.id))) errors.push(`panels.json: profile id "${d}" bị trùng`);
+  for (const d of duplicates(panels.data.finishes.map((f) => f.id))) errors.push(`panels.json: finish id "${d}" bị trùng`);
 
-  const sceneCheck = checkSceneRefs(scene.data, room.data, catalog.data, 'scene.json');
+  const refs: Refs = { room: room.data, catalog: catalog.data, panels: panels.data };
+  for (const w of room.data.walls) {
+    if (w.panel) errors.push(...checkPanel(w.panel, refs, `room.json: tường "${w.id}"`, wallLength(w)));
+  }
+
+  const sceneCheck = checkSceneRefs(scene.data, refs, 'scene.json');
   errors.push(...sceneCheck.errors);
   warnings.push(...sceneCheck.warnings);
 
   if (errors.length) return { ok: false, errors };
-  return { ok: true, data: { room: room.data, catalog: catalog.data, scene: scene.data }, warnings };
+  return { ok: true, data: { ...refs, scene: scene.data }, warnings };
 }
 
-/** Ràng buộc chéo của một cảnh với phòng + catalog hiện tại. */
-export function checkSceneRefs(
-  scene: Scene,
-  room: Room,
-  catalog: Catalog,
-  file: string,
-): { errors: string[]; warnings: string[] } {
+/** Ràng buộc chéo của một cảnh với phòng + catalog + panels hiện tại. */
+export function checkSceneRefs(scene: Scene, refs: Refs, file: string): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const catalogIds = new Set(catalog.items.map((i) => i.id));
-  const wallIds = new Set(room.walls.map((w) => w.id));
+  const catalogIds = new Set(refs.catalog.items.map((i) => i.id));
+  const walls = new Map(refs.room.walls.map((w) => [w.id, w]));
   for (const p of scene.items) {
     if (!catalogIds.has(p.catalogId)) errors.push(`${file}: "${p.uid}" dùng catalogId không tồn tại "${p.catalogId}"`);
-    if ('wall' in p && !wallIds.has(p.wall)) errors.push(`${file}: "${p.uid}" treo lên tường không tồn tại "${p.wall}"`);
+    if ('wall' in p && !walls.has(p.wall)) errors.push(`${file}: "${p.uid}" treo lên tường không tồn tại "${p.wall}"`);
   }
-  for (const id of Object.keys(scene.room.walls)) {
-    if (!wallIds.has(id)) warnings.push(`${file}: ghi đè cho tường không tồn tại "${id}" (bỏ qua)`);
+  for (const [id, o] of Object.entries(scene.room.walls)) {
+    const w = walls.get(id);
+    if (!w) {
+      warnings.push(`${file}: ghi đè cho tường không tồn tại "${id}" (bỏ qua)`);
+      continue;
+    }
+    if (o.panel) errors.push(...checkPanel(o.panel, refs, `${file}: tường "${id}"`, wallLength(w)));
+  }
+  const fixtureIds = new Set(refs.room.fixtures.map((f) => f.id));
+  for (const id of scene.room.hiddenFixtures) {
+    if (!fixtureIds.has(id)) warnings.push(`${file}: ẩn thiết bị không tồn tại "${id}" (bỏ qua)`);
   }
   return { errors, warnings };
 }
 
 /** Parse + kiểm tra một cảnh lấy từ autosave / file Import / Share link. */
-export function parseScene(raw: unknown, room: Room, catalog: Catalog, file: string): Result<Scene> {
+export function parseScene(raw: unknown, refs: Refs, file: string): Result<Scene> {
   const parsed = Scene.safeParse(raw);
   if (!parsed.success) return { ok: false, errors: formatZod(file, parsed.error) };
-  const check = checkSceneRefs(parsed.data, room, catalog, file);
+  const check = checkSceneRefs(parsed.data, refs, file);
   if (check.errors.length) return { ok: false, errors: check.errors };
   return { ok: true, data: parsed.data, warnings: check.warnings };
 }

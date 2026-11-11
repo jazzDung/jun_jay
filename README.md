@@ -71,6 +71,16 @@ Thêm một object vào `items` trong `public/data/catalog.json` — **không c�
 
 Sau đó chạy `npm run validate-data`.
 
+## Ốp lam sóng
+
+- Chọn một mảng tường → mục **Ốp lam sóng**. "Tường trái/phải" tính khi **đứng ở cửa vào nhìn ra cửa sổ**:
+  tường trái = phía lối vào (z=400), tường phải = phía WC (z=0).
+- Thông số tấm và danh sách màu gỗ ở `public/data/panels.json` — có thông số thật từ bên thi công thì sửa
+  `profiles[].width / ridges / ridgeWidth / ridgeDepth / base`.
+- Thêm màu gỗ mới từ ảnh chụp: đặt ảnh (tấm lam nằm dọc trên nền trắng) vào `ref/wood_panel/`, thêm dòng vào
+  `SOURCES` trong `tools/make_panel_textures.py`, chạy `python tools/make_panel_textures.py`, rồi chép màu +
+  `period` in ra vào `panels.json`.
+
 ## Lưu cảnh
 
 - **Tự lưu** vào trình duyệt của từng thiết bị (Tab và Mac lưu riêng).
@@ -101,7 +111,7 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 - [x] Lát 1 — scaffold, schema dữ liệu, `room.json` / `catalog.json` theo hiện trạng, viewer thô (sàn + khối tường), camera 3D / mặt bằng
 - [x] Lát 2 — dựng phòng đầy đủ: khoét ô cửa, cửa sổ, cánh cửa + vùng quét, phào chỉ, ốp PVC, trần thả, máy lạnh, đèn; tự ẩn tường chắn tầm nhìn
 - [x] Lát 3 — chọn tường/trần → đổi màu (color picker + hex + bảng màu concept), bật/tắt phào chỉ, autosave, Export/Import JSON, Share link
-- [ ] Lát 4 — ốp lam sóng (texture từ ảnh thật, biên dạng 3D)
+- [x] Lát 4 — ốp lam sóng: texture từ ảnh mẫu thật, biên dạng sóng 3D, ốp cả tường / nửa tường / tuỳ chỉnh, kín trần / ốp lửng, cả 2 tường dài; ẩn/hiện đèn & thiết bị hiện trạng
 - [ ] Lát 5 — Export for AI (bộ ảnh góc nhìn + prompt cho Gemini), deploy
 
 ### Future improvements
