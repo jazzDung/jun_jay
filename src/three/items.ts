@@ -1,15 +1,27 @@
 /**
- * Lớp đồ đặt sàn / treo trần: đồng bộ scene.items → object 3D. Hình khối chỉ dựng lại
- * khi đổi loại (catalogId); đổi vị trí / xoay chỉ cập nhật transform.
+ * Lớp đồ trong cảnh: đồng bộ scene.items → object 3D.
+ *  - Đồ đặt sàn / treo trần: con của `group`, toạ độ thế giới.
+ *  - Đồ treo tường: con của group cục bộ của tường (ẩn theo tường khi bị cắt), đặt theo
+ *    (u, v) và lùi ra trước lớp ốp lam nếu có.
+ * Hình khối chỉ dựng lại khi đổi loại (catalogId); đổi vị trí chỉ cập nhật transform.
  */
 import * as THREE from 'three';
-import type { CatalogItem, ItemPlacement, Scene } from '../data/schema';
+import type { CatalogItem, ItemPlacement, Placement, Scene, WallPlacement } from '../data/schema';
+import type { WallFrame } from './room/wallFrame';
 import { buildShape } from './shapes';
 import { cm } from './units';
+
+export interface WallHost {
+  group: THREE.Object3D;
+  frame: WallFrame;
+  /** Khoảng lùi (m) khỏi mặt tường cho món có khoảng u0..u1, mép dưới v (cm): lớp ốp / phào chỉ. */
+  offsetAt: (u0: number, u1: number, vBottom: number) => number;
+}
 
 export interface ItemObject {
   root: THREE.Group;
   catalogId: string;
+  wallId: string | null;
 }
 
 export class ItemLayer {
@@ -19,6 +31,7 @@ export class ItemLayer {
   constructor(
     private readonly catalog: Map<string, CatalogItem>,
     private readonly ceilingHeight: number,
+    private readonly walls: (id: string) => WallHost | undefined,
   ) {
     this.group.name = 'items';
   }
@@ -26,9 +39,11 @@ export class ItemLayer {
   sync(scene: Scene): void {
     const alive = new Set<string>();
     for (const p of scene.items) {
-      if ('wall' in p) continue; // đồ treo tường: v3
       const item = this.catalog.get(p.catalogId);
       if (!item) continue;
+      const wallId = 'wall' in p ? p.wall : null;
+      const parent = wallId ? this.walls(wallId)?.group : this.group;
+      if (!parent) continue;
       alive.add(p.uid);
       let obj = this.objects.get(p.uid);
       if (!obj || obj.catalogId !== p.catalogId) {
@@ -37,20 +52,32 @@ export class ItemLayer {
         root.name = `item:${p.uid}`;
         root.add(buildShape(item));
         root.traverse((o) => (o.userData.pick = { kind: 'item', uid: p.uid }));
-        this.group.add(root);
-        obj = { root, catalogId: p.catalogId };
+        obj = { root, catalogId: p.catalogId, wallId };
         this.objects.set(p.uid, obj);
       }
+      if (obj.root.parent !== parent) parent.add(obj.root);
+      obj.wallId = wallId;
       this.place(obj.root, p, item);
     }
     for (const uid of [...this.objects.keys()]) if (!alive.has(uid)) this.remove(uid);
   }
 
   /** Cập nhật transform (dùng cả khi kéo thả trực tiếp, chưa ghi vào scene). */
-  place(root: THREE.Object3D, p: Pick<ItemPlacement, 'x' | 'z' | 'rot' | 'drop'>, item: CatalogItem): void {
-    const y = item.mount === 'ceiling' ? cm(this.ceilingHeight - (p.drop ?? 30) - item.size.h) : 0;
-    root.position.set(cm(p.x), y, cm(p.z));
-    root.rotation.y = -THREE.MathUtils.degToRad(p.rot); // rot dương = theo chiều kim đồng hồ nhìn từ trên
+  place(root: THREE.Object3D, p: Placement, item: CatalogItem): void {
+    if ('wall' in p) return this.placeOnWall(root, p, item);
+    const ip = p as ItemPlacement;
+    const y = item.mount === 'ceiling' ? cm(this.ceilingHeight - (ip.drop ?? 30) - item.size.h) : 0;
+    root.position.set(cm(ip.x), y, cm(ip.z));
+    root.rotation.set(0, -THREE.MathUtils.degToRad(ip.rot), 0); // rot dương = theo chiều kim đồng hồ nhìn từ trên
+  }
+
+  private placeOnWall(root: THREE.Object3D, p: WallPlacement, item: CatalogItem): void {
+    const host = this.walls(p.wall);
+    if (!host) return;
+    // gốc shape ở tâm đáy, sâu từ −d/2 → +d/2 → lùi d/2 để mặt sau áp vào tường / lớp ốp
+    const off = host.offsetAt(p.u - item.size.w / 2, p.u + item.size.w / 2, p.v - item.size.h / 2);
+    root.position.set(host.frame.uToX(p.u), cm(p.v - item.size.h / 2), cm(item.size.d) / 2 + off + 0.002);
+    root.rotation.set(0, 0, 0);
   }
 
   private remove(uid: string): void {
@@ -61,6 +88,7 @@ export class ItemLayer {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();
       const mat = m.material;
+      // texture dùng chung trong cache của shapes → chỉ huỷ material
       if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
       else mat?.dispose();
     });

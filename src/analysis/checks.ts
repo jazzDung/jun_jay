@@ -4,7 +4,7 @@
  *  - khoảng cách tới 4 mặt tường của khu chứa nó,
  *  - cảnh báo: chồng lấn, xuyên tường, nằm trong vùng quét cửa, lối đi chính < minWidth.
  */
-import type { CatalogItem, ItemPlacement, Room, Scene, Zone } from '../data/schema';
+import type { CatalogItem, ItemPlacement, Room, Scene, WallPlacement, Zone } from '../data/schema';
 import { wallLength } from '../data/validate';
 
 /** Hạ chữ cái đầu (giữ nguyên viết tắt như WC). */
@@ -208,6 +208,49 @@ function aisleWarnings(room: Room, items: ItemInfo[]): Warning[] {
   return out;
 }
 
+// --------------------------------------------------------------- wall items
+
+/** Khung (u0..u1, v0..v1) cm của đồ treo trên mặt tường. */
+export function wallRect(p: WallPlacement, item: CatalogItem) {
+  return { u0: p.u - item.size.w / 2, u1: p.u + item.size.w / 2, v0: p.v - item.size.h / 2, v1: p.v + item.size.h / 2 };
+}
+
+type WR = ReturnType<typeof wallRect>;
+const wOverlap = (a: WR, b: WR, tol = 0.5) => a.u0 < b.u1 - tol && b.u0 < a.u1 - tol && a.v0 < b.v1 - tol && b.v0 < a.v1 - tol;
+
+function wallItemWarnings(room: Room, scene: Scene, catalog: Map<string, CatalogItem>): Warning[] {
+  const out: Warning[] = [];
+  const hidden = new Set(scene.room.hiddenFixtures);
+  const list = scene.items
+    .filter((p): p is WallPlacement => 'wall' in p)
+    .flatMap((p) => {
+      const item = catalog.get(p.catalogId);
+      return item ? [{ p, item, r: wallRect(p, item) }] : [];
+    });
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i];
+    const wall = room.walls.find((w) => w.id === a.p.wall);
+    if (!wall) continue;
+    const len = wallLength(wall);
+    if (a.r.u0 < -0.5 || a.r.u1 > len + 0.5 || a.r.v0 < -0.5 || a.r.v1 > room.ceilingHeight + 0.5)
+      out.push({ kind: 'wall', message: `${a.item.name} tràn ra ngoài mặt tường.`, uids: [a.p.uid] });
+    for (const o of room.openings.filter((o) => o.wall === wall.id)) {
+      const or = { u0: o.u[0], u1: o.u[1], v0: o.sill, v1: o.sill + o.height };
+      if (wOverlap(a.r, or)) out.push({ kind: 'wall', message: `${a.item.name} che ${lowerFirst(o.label)}.`, uids: [a.p.uid] });
+    }
+    for (const f of room.fixtures.filter((f) => f.wall === wall.id && !hidden.has(f.id))) {
+      const fr = { u0: (f.u ?? 0) - f.size.w / 2, u1: (f.u ?? 0) + f.size.w / 2, v0: (f.v ?? 0) - f.size.h / 2, v1: (f.v ?? 0) + f.size.h / 2 };
+      if (wOverlap(a.r, fr)) out.push({ kind: 'overlap', message: `${a.item.name} chồng lên ${lowerFirst(f.label)}.`, uids: [a.p.uid] });
+    }
+    for (let j = i + 1; j < list.length; j++) {
+      const b = list[j];
+      if (b.p.wall === a.p.wall && wOverlap(a.r, b.r))
+        out.push({ kind: 'overlap', message: `${a.item.name} chồng lên ${b.item.name} trên tường.`, uids: [a.p.uid, b.p.uid] });
+    }
+  }
+  return out;
+}
+
 // --------------------------------------------------------------- all
 
 export function analyze(room: Room, scene: Scene, catalog: Map<string, CatalogItem>): { items: ItemInfo[]; warnings: Warning[] } {
@@ -251,5 +294,6 @@ export function analyze(room: Room, scene: Scene, catalog: Map<string, CatalogIt
   }
 
   warnings.push(...aisleWarnings(room, items));
+  warnings.push(...wallItemWarnings(room, scene, catalog));
   return { items, warnings };
 }

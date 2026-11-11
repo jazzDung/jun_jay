@@ -4,7 +4,7 @@
  */
 import { useRef, useState } from 'preact/hooks';
 import type { Warning } from '../analysis/checks';
-import type { CatalogItem, ItemPlacement, Panels, Room, Scene, Wall } from '../data/schema';
+import type { CatalogItem, ItemPlacement, Panels, Room, Scene, Wall, WallPlacement } from '../data/schema';
 import { wallLength } from '../data/validate';
 import type { PickTarget } from '../three/viewer';
 import { ColorField } from './ColorField';
@@ -13,7 +13,7 @@ import { PanelEditor } from './PanelEditor';
 
 /** Thao tác trên món đang chọn — App cài đặt (có undo/redo). */
 export interface ItemActions {
-  update: (uid: string, patch: Partial<ItemPlacement>, tag?: string) => void;
+  update: (uid: string, patch: Partial<ItemPlacement & WallPlacement>, tag?: string) => void;
   rotate: (uid: string, delta: number) => void;
   duplicate: (uid: string) => void;
   remove: (uid: string) => void;
@@ -139,7 +139,7 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
 }
 
 function ItemPanel({ room, scene, catalog, warnings, itemActions, onClearSelection, uid }: Props & { uid: string }) {
-  const p = scene.items.find((x): x is ItemPlacement => x.uid === uid && !('wall' in x));
+  const p = scene.items.find((x) => x.uid === uid);
   const item = p && catalog.get(p.catalogId);
   if (!p || !item) return null;
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { analyze, footprint, wallDistances } from '../analysis/checks';
 import { loadDefaultData } from '../data/load';
-import type { ItemPlacement, Scene } from '../data/schema';
+import type { ItemPlacement, Placement, Scene, WallPlacement } from '../data/schema';
 import type { DataBundle } from '../data/validate';
 import { downloadSnapshot, exportForAi } from '../export/exportAi';
 import {
@@ -96,14 +96,19 @@ export function App() {
     commit((prev) => ({ ...prev, items: fn(prev.items) }), tag);
 
   const itemActions: ItemActions = {
-    update: (uid, patch, tag) => updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, ...patch } : p)), tag && `${tag}:${uid}`),
+    update: (uid, patch, tag) => updateItems((items) => items.map((p) => (p.uid === uid ? ({ ...p, ...patch } as Placement) : p)), tag && `${tag}:${uid}`),
     rotate: (uid, delta) =>
       updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, rot: (((p.rot + delta) % 360) + 360) % 360 } : p))),
     duplicate: (uid) => {
       const uidNew = newUid();
       updateItems((items) => {
         const src = items.find((p) => p.uid === uid);
-        if (!src || !isItem(src)) return items;
+        if (!src) return items;
+        if (!isItem(src)) {
+          // đồ treo tường: đặt cạnh bên phải, cách 10 cm
+          const w = catalogMap.get(src.catalogId)?.size.w ?? 30;
+          return [...items, { ...src, uid: uidNew, u: src.u + w + 10 }];
+        }
         return [...items, { ...src, uid: uidNew, x: src.x + 20, z: src.z + 20 }];
       });
       setSelection({ kind: 'item', uid: uidNew });
@@ -119,9 +124,41 @@ export function App() {
     if (!viewer || state.status !== 'ready') return;
     const item = state.data.catalog.items.find((i) => i.id === catalogId);
     if (!item) return;
-    const [x, z] = viewer.viewCenterCm();
     const uid = newUid();
-    const p: ItemPlacement = { uid, catalogId, x, z, rot: 0, ...(item.mount === 'ceiling' ? { drop: 30 } : {}) };
+    let p: Placement;
+    if (item.mount === 'wall') {
+      // treo lên tường đang chọn / tường của món treo đang chọn / tường hướng về camera
+      const sel = selection;
+      const selItem = sel?.kind === 'item' ? scene?.items.find((x) => x.uid === sel.uid) : undefined;
+      const wallId = sel?.kind === 'wall' ? sel.id : selItem && 'wall' in selItem ? selItem.wall : null;
+      const target = wallId ? { wallId, u: (viewer.wallForView()?.wallId === wallId && viewer.wallForView()?.u) || 0 } : viewer.wallForView();
+      const wall = target && state.data.room.walls.find((w) => w.id === target.wallId);
+      if (!target || !wall) {
+        setToast({ kind: 'error', lines: ['Chạm chọn một mảng tường trước, rồi thêm đồ treo tường.'] });
+        return;
+      }
+      const L = Math.hypot(wall.to[0] - wall.from[0], wall.to[1] - wall.from[1]);
+      const v = typeof item.params.defaultHeight === 'number' ? item.params.defaultHeight : 150;
+      const half = item.size.w / 2;
+      const clampU = (u: number) => Math.min(Math.max(u, half), L - half);
+      // tránh chồng lên đồ đã treo cùng tường (cùng dải độ cao): dò sang phải rồi sang trái theo bước 10 cm
+      const others = (scene?.items ?? []).filter((x): x is WallPlacement => 'wall' in x && x.wall === wall.id).flatMap((x) => {
+        const it = catalogMap.get(x.catalogId);
+        return it ? [{ u0: x.u - it.size.w / 2, u1: x.u + it.size.w / 2, v0: x.v - it.size.h / 2, v1: x.v + it.size.h / 2 }] : [];
+      });
+      const free = (u: number) =>
+        !others.some((o) => u - half < o.u1 + 5 && o.u0 - 5 < u + half && v - item.size.h / 2 < o.v1 && o.v0 < v + item.size.h / 2);
+      const start = Math.round(clampU(target.u || L / 2) / 10) * 10;
+      let u = start;
+      for (let d = 0; d <= L; d += 10) {
+        if (start + d <= L - half && free(start + d)) { u = start + d; break; }
+        if (start - d >= half && free(start - d)) { u = start - d; break; }
+      }
+      p = { uid, catalogId, wall: wall.id, u: clampU(u), v } satisfies WallPlacement;
+    } else {
+      const [x, z] = viewer.viewCenterCm();
+      p = { uid, catalogId, x, z, rot: 0, ...(item.mount === 'ceiling' ? { drop: 30 } : {}) } satisfies ItemPlacement;
+    }
     updateItems((items) => [...items, p]);
     setSelection({ kind: 'item', uid });
     if (window.matchMedia('(max-width: 720px)').matches) setCatalogOpen(false);
@@ -164,10 +201,11 @@ export function App() {
     const viewer = new Viewer(hostRef.current);
     viewer.setRoom(room, panels, catalog.items);
     viewer.onPick = (t) => setSelection(t);
-    viewer.onItemMove = (uid, x, z) => updateItems((items) => items.map((p) => (p.uid === uid && isItem(p) ? { ...p, x, z } : p)));
+    viewer.onItemMove = (uid, patch) => updateItems((items) => items.map((p) => (p.uid === uid ? ({ ...p, ...patch } as Placement) : p)));
     viewer.labelFor = (_uid, p) => {
       const item = catalogMap.get(p.catalogId);
       if (!item) return '';
+      if ('wall' in p) return `${item.size.w} × ${item.size.h} cm · tâm cao ${Math.round(p.v)} cm · mép dưới ${Math.round(p.v - item.size.h / 2)} cm`;
       const size = `${item.size.w} × ${item.size.d} cm`;
       if (item.mount !== 'floor') return size;
       const dist = wallDistances(room, { placement: p, item, rect: footprint(p, item) });
@@ -223,6 +261,7 @@ export function App() {
       if (k === 'delete' || k === 'backspace') return e.preventDefault(), itemActions.remove(uid);
       if (mod && k === 'd') return e.preventDefault(), itemActions.duplicate(uid);
       if (!mod && k === 'r') return itemActions.rotate(uid, e.shiftKey ? -90 : 90);
+      // (xoay chỉ áp dụng cho đồ sàn — itemActions.rotate bỏ qua đồ treo tường)
       if (!mod && k === 'q') return itemActions.rotate(uid, -15);
       if (!mod && k === 'e') return itemActions.rotate(uid, 15);
     };

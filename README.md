@@ -94,6 +94,17 @@ Sau đó chạy `npm run validate-data`.
 - Thêm hình khối mới: viết hàm trong `src/three/shapes/index.ts`, đăng ký vào `SHAPES`; catalog chỉ cần ghi tên `shape`.
   `size` của món luôn là hộp bao thật (w ngang × d sâu × h cao, cm).
 
+## Treo đồ lên tường
+
+- Chạm chọn một mảng tường (hiện lưới 10 cm, vạch đậm mỗi 50 cm) → **+ Thêm đồ** → chọn món "treo tường".
+  Món được treo ở độ cao mặc định (`params.defaultHeight`, vd tranh 150, đồng hồ 180, máy lạnh 228) và tự né đồ đã treo.
+  Chưa chọn tường thì treo lên tường đang hướng về camera.
+- Kéo món để dời dọc / lên xuống theo lưới 10 cm (tắt "Lưới" để kéo tự do). Panel món: đổi tường, vị trí dọc tường,
+  độ cao tâm; hiện mép dưới cách sàn, mép trên cách trần, khoảng tới hai đầu tường.
+- Ảnh in cho tranh / poster / thảm / mặt đồng hồ: `materials.<phần>.texture` trong catalog trỏ tới `public/images/catalog/`.
+  Ảnh cắt + nắn từ ảnh chụp (hoặc vẽ bằng code) bằng `python tools/make_catalog_textures.py` — thêm món mới: khai báo
+  4 góc trong `QUADS` của script.
+
 ## Xuất cho AI (Gemini)
 
 Panel **Cảnh** → **Xuất cho AI** tải về một file `.zip`:
@@ -151,7 +162,14 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 - [x] Nhãn kích thước + khoảng cách tới tường; cảnh báo chồng lấn, xuyên tường, vùng quét cửa, lối đi < 80 cm
 - [x] Undo/redo
 
-**Tiếp theo:** v3 đồ treo tường → v4 ánh sáng + camera tầm mắt → v5 chuốt (GLTF, path tracer).
+**v3 — Đồ treo tường** ✓
+
+- [x] Catalog đồ treo tường (tranh, poster, đồng hồ, tấm inox, pegboard, kệ, vải treo, đèn tường, đèn đuốc, máy lạnh, đèn tuýp)
+- [x] Texture thật cho đồ owned (`tools/make_catalog_textures.py`), thảm hổ có hình in
+- [x] Lưới 10 cm trên tường đang chọn, kéo theo lưới, hiển thị độ cao tâm / mép dưới / mép trên
+- [x] Tự tìm chỗ trống khi treo, đồ lùi ra trước lớp ốp lam / phào chỉ; cảnh báo che cửa, chồng thiết bị, tràn tường
+
+**Tiếp theo:** v4 ánh sáng + camera tầm mắt → v5 chuốt (GLTF, path tracer).
 
 ### Future improvements
 

@@ -30,8 +30,9 @@ const ROUGH: Record<MatSpec['type'], [number, number]> = {
   fabric: [0.95, 0],
   leather: [0.55, 0],
   wood: [0.6, 0],
-  metal: [0.4, 0.6],
-  chrome: [0.15, 1],
+  // real-time không có env map → kim loại thật (metalness cao) bị tối; giữ vừa phải
+  metal: [0.38, 0.3],
+  chrome: [0.15, 0.6],
   glass: [0.05, 0],
   acrylic: [0.2, 0],
   ceramic: [0.3, 0],
@@ -43,11 +44,29 @@ const ROUGH: Record<MatSpec['type'], [number, number]> = {
   print: [0.85, 0],
 };
 
+const textures = new Map<string, THREE.Texture>();
+const loader = new THREE.TextureLoader();
+
+function loadTexture(path: string): THREE.Texture {
+  let t = textures.get(path);
+  if (!t) {
+    t = loader.load(import.meta.env.BASE_URL + path);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    textures.set(path, t);
+  }
+  return t;
+}
+
 function makeMaterial(spec: MatSpec | undefined, fallback: string, glow: boolean): THREE.Material {
   const type = spec?.type ?? 'plastic';
   const color = spec?.color ?? fallback;
   const [roughness, metalness] = ROUGH[type];
   const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  if (spec?.texture) {
+    mat.map = loadTexture(spec.texture);
+    mat.color.set('#ffffff'); // texture đã mang màu thật
+  }
   if (type === 'glass') Object.assign(mat, { transparent: true, opacity: 0.35, depthWrite: false });
   // đèn: chao giấy / mica tự phát sáng (ánh sáng thật làm ở v4)
   if (glow && (type === 'paper' || type === 'acrylic')) {
@@ -288,12 +307,99 @@ const cubeLamp: ShapeFn = ({ w, d, h, mat }) => {
   return out;
 };
 
-/** Đèn lồng giấy treo trần: quả cầu + dây lên trần (dây vẽ dài 1 m, bị trần che). */
-const lantern: ShapeFn = ({ w, h, mat }) => {
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(w / 2, 32, 20), mat('shade'));
+/** Đèn lồng giấy treo trần: quả cầu (có nan ngang) + dây lên trần (dây vẽ dài 1 m, bị trần che). */
+const lantern: ShapeFn = ({ w, h, p, mat }) => {
+  const r = w / 2;
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 20), mat('shade'));
   ball.position.y = h / 2;
-  const cord = cyl(0.003, 0.003, 1, new THREE.MeshStandardMaterial({ color: '#eeeeee' }), 0, h);
-  return [ball, cord];
+  const out: THREE.Object3D[] = [ball, cyl(0.004, 0.004, 1, new THREE.MeshStandardMaterial({ color: '#222222' }), 0, h)];
+  if (p.ribs) {
+    const rib = new THREE.MeshStandardMaterial({ color: '#d9d4c8', roughness: 0.9 });
+    for (let k = -6; k <= 6; k++) {
+      const lat = (k / 7) * (Math.PI / 2);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r * Math.cos(lat) * 1.003, 0.0015, 4, 48), rib);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = h / 2 + r * Math.sin(lat);
+      out.push(ring);
+    }
+  }
+  return out;
+};
+
+// ------------------------------------------------------- đồ treo tường
+// Gốc tâm đáy, mặt trước +z, mặt sau ở z = −d/2 (áp vào tường).
+
+/** Tranh / poster: mặt in (texture) + khung `frame` cm (0 = canvas không khung). */
+const frame: ShapeFn = ({ w, d, h, p, mat }) => {
+  const f = cm(num(p.frame, 0));
+  const out: THREE.Object3D[] = [box(w, h, d, f > 0 ? mat('frame', '#C79A63') : mat('art'), 0, 0, 0)];
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(w - 2 * f, h - 2 * f), mat('art'));
+  art.position.set(0, h / 2, d / 2 + 0.001);
+  out.push(art);
+  return out;
+};
+
+const clock: ShapeFn = ({ w, d, h, mat }) => {
+  const r = w / 2;
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d, 48), mat('rim', '#1F2328'));
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = h / 2;
+  const face = new THREE.Mesh(new THREE.CircleGeometry(r * 0.92, 48), mat('face', '#F5F3EE'));
+  face.position.set(0, h / 2, d / 2 + 0.001);
+  return [rim, face];
+};
+
+const panelSheet: ShapeFn = ({ w, d, h, mat }) => [box(w, h, Math.max(d, 0.003), mat('body'), 0, 0, 0)];
+
+const pegboardShape: ShapeFn = ({ w, d, h, mat }) => [box(w, h, d, mat('body'), 0, 0, 0)];
+
+const wallShelf: ShapeFn = ({ w, d, h, mat }) => {
+  const m = mat('body');
+  const t = 0.025;
+  const out: THREE.Object3D[] = [box(w, t, d, m, 0, h - t, 0, 0.003)];
+  for (const x of [-w / 2 + 0.08, w / 2 - 0.08]) {
+    out.push(box(0.015, h - t, 0.02, mat('bracket', '#222222'), x, 0, -d / 2 + 0.01));
+    out.push(box(0.015, 0.02, d * 0.8, mat('bracket', '#222222'), x, h - t - 0.02, -d / 2 + d * 0.4));
+  }
+  return out;
+};
+
+const tapestry: ShapeFn = ({ w, h, mat }) => {
+  const geo = new THREE.PlaneGeometry(w, h * 0.97, 24, 4);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) pos.setZ(i, 0.004 + Math.sin((pos.getX(i) / w) * Math.PI * 6) * 0.004);
+  geo.computeVertexNormals();
+  const cloth = new THREE.Mesh(geo, mat('body'));
+  (cloth.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+  cloth.position.set(0, h * 0.97 / 2, 0);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, w + 0.1, 12), mat('rod', '#5a3a2a'));
+  rod.rotation.z = Math.PI / 2;
+  rod.position.set(0, h - 0.01, 0.01);
+  return [cloth, rod];
+};
+
+const wallLight: ShapeFn = ({ w, d, h, mat }) => {
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2, d * 0.3, 40), mat('base', '#2a2a2a'));
+  plate.rotation.x = Math.PI / 2;
+  plate.position.set(0, h / 2, -d / 2 + d * 0.15);
+  const shade = new THREE.Mesh(new THREE.SphereGeometry(w / 2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), mat('shade'));
+  shade.rotation.x = Math.PI / 2;
+  shade.scale.set(1, (d * 0.7) / (w / 2), 1);
+  shade.position.set(0, h / 2, -d / 2 + d * 0.3);
+  return [plate, shade];
+};
+
+/** Đèn đuốc: cán nghiêng ra trước + đầu lục giác phát sáng. */
+const torchLamp: ShapeFn = ({ w, d, h, mat }) => {
+  const g = new THREE.Group();
+  const stickH = h * 0.72;
+  g.add(box(w * 0.35, stickH, w * 0.35, mat('body'), 0, 0, 0));
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2, h - stickH, 6), mat('head'));
+  head.position.y = stickH + (h - stickH) / 2;
+  g.add(head);
+  g.rotation.x = Math.atan2(d * 0.6, h); // ngả đầu ra phía trước
+  g.position.z = -d / 2 + w * 0.2;
+  return [g];
 };
 
 const plant: ShapeFn = ({ w, h, p, mat }) => {
@@ -355,6 +461,14 @@ export const SHAPES: Record<string, ShapeFn> = {
   lantern,
   plant,
   tube_light: tubeLight,
+  frame,
+  clock,
+  panel_sheet: panelSheet,
+  pegboard: pegboardShape,
+  wall_shelf: wallShelf,
+  tapestry,
+  wall_light: wallLight,
+  torch_lamp: torchLamp,
 };
 
 /** Dựng một món catalog. Gốc tâm đáy, mặt trước +z, đơn vị m. */

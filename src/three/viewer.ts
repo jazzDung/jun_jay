@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { CatalogItem, ItemPlacement, Panel, Panels, Room, Scene } from '../data/schema';
+import type { CatalogItem, ItemPlacement, Panel, Panels, Placement, Room, Scene, WallPlacement } from '../data/schema';
 import { ItemLayer } from './items';
 import { buildPanel } from './room/panel';
 import { buildRoom, type PickTarget, type RoomBuild } from './room/buildRoom';
@@ -23,10 +23,10 @@ export class Viewer {
   readonly scene = new THREE.Scene();
   /** Gọi khi người dùng chạm/click chọn (null = chạm vào chỗ trống). */
   onPick: (target: PickTarget | null) => void = () => {};
-  /** Gọi khi kéo xong một món (vị trí mới, cm). */
-  onItemMove: (uid: string, x: number, z: number) => void = () => {};
+  /** Gọi khi kéo xong một món: đồ sàn {x, z}, đồ treo tường {u, v} (cm). */
+  onItemMove: (uid: string, patch: Partial<ItemPlacement & WallPlacement>) => void = () => {};
   /** Nội dung nhãn nổi trên món đang chọn (gọi lại liên tục khi đang kéo). */
-  labelFor: (uid: string, p: ItemPlacement) => string = () => '';
+  labelFor: (uid: string, p: Placement) => string = () => '';
 
   private readonly persp: THREE.PerspectiveCamera;
   private readonly ortho: THREE.OrthographicCamera;
@@ -46,16 +46,21 @@ export class Viewer {
   private pointerDown: { x: number; y: number; id: number } | null = null;
   private items: ItemLayer | null = null;
   private catalog = new Map<string, CatalogItem>();
-  private placements = new Map<string, ItemPlacement>();
+  private placements = new Map<string, Placement>();
   private snapCm = 5;
   private drag: {
     uid: string;
     pointerId: number;
+    /** Đồ sàn: lệch (m) trên mặt sàn; đồ tường: lệch (cm) theo (u, v). */
     offset: THREE.Vector2;
     screen: THREE.Vector2;
     moved: boolean;
-    current: ItemPlacement;
+    current: Placement;
   } | null = null;
+  /** Lớp ốp đang có hiệu lực trên từng tường (để đồ treo lùi ra trước). */
+  private readonly wallPanels = new Map<string, { panel: Panel; depth: number } | null>();
+  private grid: THREE.Object3D | null = null;
+  private gridWall: string | null = null;
   private readonly floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly warnBoxes: THREE.Box3Helper[] = [];
   private warnUids: string[] = [];
@@ -119,7 +124,11 @@ export class Viewer {
     disposeTree(this.roomGroup);
     this.built = buildRoom(room);
     this.roomGroup = this.built.group;
-    this.items = new ItemLayer(this.catalog, room.ceilingHeight);
+    this.wallPanels.clear();
+    this.items = new ItemLayer(this.catalog, room.ceilingHeight, (id) => {
+      const w = this.built?.walls.get(id);
+      return w && { group: w.group, frame: w.frame, offsetAt: (u0, u1, vb) => this.wallOffset(id, u0, u1, vb) };
+    });
     this.roomGroup.add(this.items.group);
     this.scene.add(this.roomGroup);
     this.bounds.copy(this.built.bounds);
@@ -146,7 +155,7 @@ export class Viewer {
     ce.mat.color.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
     ce.mat.emissive.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
 
-    this.placements = new Map(scene.items.filter((p): p is ItemPlacement => !('wall' in p)).map((p) => [p.uid, p]));
+    this.placements = new Map(scene.items.map((p) => [p.uid, p]));
     if (!this.drag) this.items?.sync(scene);
     this.updateSelectionBox();
   }
@@ -193,6 +202,8 @@ export class Viewer {
       }
     }
     this.panelMeshes.set(wallId, { key, mesh });
+    const profile = panel && this.panels.profiles.find((x) => x.id === panel.profile);
+    this.wallPanels.set(wallId, panel && profile ? { panel, depth: (profile.base + profile.ridgeDepth) / 100 } : null);
 
     // ẩn phào chỉ / len nằm dưới lớp ốp (chúng nhô qua rãnh lam)
     if (w.mouldings) {
@@ -210,9 +221,87 @@ export class Viewer {
     }
   }
 
+  /**
+   * Khoảng lùi (m) cho đồ treo có khoảng u0..u1 và mép dưới vb (cm): dày lớp ốp nếu món chạm
+   * vùng ốp, nếu không thì chừa phào chỉ (nhô ~2 cm) khi tường còn phào.
+   */
+  private wallOffset(wallId: string, u0: number, u1: number, vb: number): number {
+    const wp = this.wallPanels.get(wallId);
+    if (wp) {
+      const { panel } = wp;
+      const inU = !panel.uRange || (u1 > panel.uRange[0] && u0 < panel.uRange[1]);
+      const inV = panel.coverage === 'full' || vb < panel.wainscotHeight;
+      if (inU && inV) return wp.depth;
+    }
+    const m = this.built?.walls.get(wallId)?.mouldings;
+    return m?.visible ? 0.02 : 0;
+  }
+
   setSelection(target: PickTarget | null): void {
     this.selection = target;
     this.updateSelectionBox();
+    this.updateGrid();
+  }
+
+  /** Lưới 10 cm (đậm mỗi 50 cm) trên tường đang chọn hoặc tường của món treo đang chọn. */
+  private updateGrid(): void {
+    const s = this.selection;
+    const p = s?.kind === 'item' ? this.placements.get(s.uid) : undefined;
+    const wallId = s?.kind === 'wall' ? s.id : p && 'wall' in p ? p.wall : null;
+    if (wallId === this.gridWall) return;
+    if (this.grid) {
+      this.grid.removeFromParent();
+      this.grid.traverse((o) => {
+        const l = o as THREE.LineSegments;
+        l.geometry?.dispose();
+        (l.material as THREE.Material | undefined)?.dispose();
+      });
+      this.grid = null;
+    }
+    this.gridWall = wallId;
+    const w = wallId ? this.built?.walls.get(wallId) : undefined;
+    if (!w) return;
+    const L = w.frame.length;
+    const H = w.frame.height;
+    const g = new THREE.Group();
+    for (const [step, opacity] of [
+      [0.1, 0.18],
+      [0.5, 0.45],
+    ] as const) {
+      const pts: number[] = [];
+      for (let x = 0; x <= L + 1e-6; x += step) pts.push(x, 0, 0, x, H, 0);
+      for (let y = 0; y <= H + 1e-6; y += step) pts.push(0, y, 0, L, y, 0);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      const mat = new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity, depthWrite: false });
+      g.add(new THREE.LineSegments(geo, mat));
+    }
+    g.position.z = 0.026; // trước lớp ốp lam (dày tối đa ~2.2 cm)
+    g.renderOrder = 5;
+    g.name = 'wallGrid';
+    w.group.add(g);
+    this.grid = g;
+  }
+
+  /** Tường khu chính hướng về camera nhiều nhất + vị trí u (cm) giữa khung nhìn — chỗ treo món mới. */
+  wallForView(): { wallId: string; u: number } | null {
+    const b = this.built;
+    if (!b) return null;
+    const cam = this.mode === 'top' ? new THREE.Vector3(this.controls.target.x, 10, this.controls.target.z) : this.persp.position;
+    let best: { wallId: string; u: number; score: number } | null = null;
+    for (const [id, w] of b.walls) {
+      if (!isVisible(w.group)) continue;
+      const toCam = cam.clone().sub(w.frame.origin).setY(0);
+      const facing = toCam.dot(w.frame.normal);
+      if (facing <= 0) continue;
+      // ưu tiên tường dài, quay mặt về camera
+      const score = (facing / Math.max(toCam.length(), 0.01)) * Math.min(w.frame.length, 4);
+      const local = w.group.worldToLocal(this.controls.target.clone());
+      const x = THREE.MathUtils.clamp(local.x, 0.3, w.frame.length - 0.3);
+      const u = Math.round((w.frame.forward ? x : w.frame.length - x) * 10) * 10;
+      if (!best || score > best.score) best = { wallId: id, u, score };
+    }
+    return best && { wallId: best.wallId, u: best.u };
   }
 
   setCameraMode(mode: CameraMode, reset = false): void {
@@ -438,11 +527,42 @@ export class Viewer {
     return this.raycaster.ray.intersectPlane(this.floorPlane, new THREE.Vector3());
   }
 
+  /** Giao điểm tia chuột với mặt phẳng tường → (u, v) cm. */
+  private wallPoint(wallId: string, clientX: number, clientY: number): THREE.Vector2 | null {
+    const w = this.built?.walls.get(wallId);
+    if (!w) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(ndc, this.activeCamera());
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(w.frame.normal, w.frame.origin);
+    const hit = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+    if (!hit) return null;
+    const local = w.group.worldToLocal(hit);
+    const u = (w.frame.forward ? local.x : w.frame.length - local.x) * 100;
+    return new THREE.Vector2(u, local.y * 100);
+  }
+
   private readonly handleDragDown = (e: PointerEvent) => {
     if (!e.isPrimary || e.button > 0 || e.target !== this.renderer.domElement) return;
     const target = this.pick(e.clientX, e.clientY);
     if (target?.kind !== 'item') return;
     const p = this.placements.get(target.uid);
+    if (p && 'wall' in p) {
+      const at = this.wallPoint(p.wall, e.clientX, e.clientY);
+      if (!at) return;
+      e.stopPropagation();
+      this.host.setPointerCapture(e.pointerId);
+      this.drag = {
+        uid: target.uid,
+        pointerId: e.pointerId,
+        offset: new THREE.Vector2(p.u - at.x, p.v - at.y),
+        screen: new THREE.Vector2(e.clientX, e.clientY),
+        moved: false,
+        current: { ...p },
+      };
+      this.onPick(target);
+      return;
+    }
     const hit = this.floorPoint(e.clientX, e.clientY);
     if (!p || !hit) return;
     e.stopPropagation(); // OrbitControls không nhận → camera đứng yên khi kéo đồ
@@ -464,16 +584,33 @@ export class Viewer {
     e.stopPropagation();
     if (!d.moved && Math.hypot(e.clientX - d.screen.x, e.clientY - d.screen.y) < TAP_SLOP) return;
     d.moved = true;
+    const cur = d.current;
+    if ('wall' in cur) {
+      const at = this.wallPoint(cur.wall, e.clientX, e.clientY);
+      const w = this.built?.walls.get(cur.wall);
+      const item = this.catalog.get(cur.catalogId);
+      if (!at || !w || !item) return;
+      // lưới tường 10 cm (khi bật bắt lưới); giữ món nằm trong mặt tường
+      const step = this.snapCm > 0 ? 10 : 1;
+      const snapW = (v: number) => Math.round(v / step) * step;
+      const L = w.frame.length * 100;
+      const H = w.frame.height * 100;
+      cur.u = THREE.MathUtils.clamp(snapW(at.x + d.offset.x), item.size.w / 2, L - item.size.w / 2);
+      cur.v = THREE.MathUtils.clamp(snapW(at.y + d.offset.y), item.size.h / 2, H - item.size.h / 2);
+      const obj = this.items?.objects.get(d.uid);
+      if (obj) this.items!.place(obj.root, cur, item);
+      return;
+    }
     const hit = this.floorPoint(e.clientX, e.clientY);
     if (!hit) return;
     const snap = (v: number) => (this.snapCm > 0 ? Math.round(v / this.snapCm) * this.snapCm : Math.round(v));
     // giữ tâm trong phạm vi các khu của phòng
     const b = this.bounds;
-    d.current.x = snap(THREE.MathUtils.clamp((hit.x + d.offset.x) * 100, b.min.x * 100, b.max.x * 100));
-    d.current.z = snap(THREE.MathUtils.clamp((hit.z + d.offset.y) * 100, b.min.z * 100, b.max.z * 100));
+    cur.x = snap(THREE.MathUtils.clamp((hit.x + d.offset.x) * 100, b.min.x * 100, b.max.x * 100));
+    cur.z = snap(THREE.MathUtils.clamp((hit.z + d.offset.y) * 100, b.min.z * 100, b.max.z * 100));
     const obj = this.items?.objects.get(d.uid);
-    const item = this.catalog.get(d.current.catalogId);
-    if (obj && item) this.items!.place(obj.root, d.current, item);
+    const item = this.catalog.get(cur.catalogId);
+    if (obj && item) this.items!.place(obj.root, cur, item);
   };
 
   private readonly handleDragUp = (e: PointerEvent) => {
@@ -482,7 +619,10 @@ export class Viewer {
     e.stopPropagation();
     this.drag = null;
     if (this.host.hasPointerCapture(e.pointerId)) this.host.releasePointerCapture(e.pointerId);
-    if (d.moved) this.onItemMove(d.uid, d.current.x, d.current.z);
+    if (d.moved) {
+      const c = d.current;
+      this.onItemMove(d.uid, 'wall' in c ? { u: c.u, v: c.v } : { x: c.x, z: c.z });
+    }
   };
 
   /** Toạ độ sàn (cm) ở giữa khung nhìn — chỗ đặt món mới thêm. */

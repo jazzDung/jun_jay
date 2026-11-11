@@ -1,6 +1,7 @@
 /**
- * Catalog đồ đặt sàn / treo trần: lọc theo loại, chỉ đồ có sẵn (owned), tìm theo tên.
- * Chạm một món → thêm vào giữa khung nhìn. Đồ treo tường làm ở v3.
+ * Catalog đồ: lọc theo loại, chỉ đồ có sẵn (owned), tìm theo tên.
+ * Chạm một món → đồ sàn đặt giữa khung nhìn; đồ treo tường treo lên tường đang chọn
+ * (hoặc tường đang hướng về camera) ở độ cao mặc định `params.defaultHeight`.
  */
 import { useMemo, useState } from 'preact/hooks';
 import type { CatalogItem, Scene } from '../data/schema';
@@ -39,7 +40,7 @@ function swatch(it: CatalogItem): string {
 }
 
 export function Catalog({ items, scene, onAdd, onClose }: Props) {
-  const placeable = useMemo(() => items.filter((i) => i.mount !== 'wall'), [items]);
+  const placeable = items;
   const categories = useMemo(() => [...new Set(placeable.map((i) => i.category))], [placeable]);
   const [cat, setCat] = useState<string | null>(null);
   const [ownedOnly, setOwnedOnly] = useState(false);
@@ -85,6 +86,7 @@ export function Catalog({ items, scene, onAdd, onClose }: Props) {
                     <span class="cat-meta">
                       {sizeText(it)}
                       {it.mount === 'ceiling' && ' · treo trần'}
+                      {it.mount === 'wall' && ' · treo tường'}
                     </span>
                   </span>
                   <span class="cat-badges">
@@ -97,7 +99,7 @@ export function Catalog({ items, scene, onAdd, onClose }: Props) {
           })}
           {!list.length && <li class="hint">Không có món nào khớp bộ lọc.</li>}
         </ul>
-        <p class="hint">Đồ treo tường (tranh, đồng hồ, kệ…) sẽ có ở v3.</p>
+        <p class="hint">Đồ treo tường được treo lên tường đang chọn — chạm vào một mảng tường trước để chọn chỗ treo.</p>
       </section>
     </aside>
   );

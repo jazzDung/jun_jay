@@ -234,3 +234,9 @@ body { background: var(--bg); color: var(--text); overscroll-behavior: none; }
   .catalog .panel { border-radius: 14px 14px 0 0; background: var(--panel); }
   .catalog-open .sidebar { display: none; }
 }
+
+/* ------------------------------------------------------------------ v3 */
+.select {
+  font: inherit; font-size: 14px; color: var(--text); background: #1f1a17; width: 100%;
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px;
+}
