@@ -171,16 +171,16 @@
     { "id": "ac_window", "type": "ac_unit", "label": "Máy lạnh Daikin", "en": "cream-white wall-mounted air conditioner (split unit)", "wall": "wall_window", "u": 200, "v": 228,
       "size": { "w": 120, "h": 28, "d": 20 }, "color": "#EDE6CF", "todo": ["vị trí chính xác"] },
     { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường phải (phía WC)", "en": "bare fluorescent tube light near the ceiling", "wall": "wall_top", "u": 420, "v": 245,
-      "size": { "w": 120, "h": 5, "d": 6 } },
+      "size": { "w": 120, "h": 5, "d": 6 }, "light": { "type": "tube", "kelvin": 6500, "intensity": 1 } },
     { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường trái (phía lối vào)", "en": "bare fluorescent tube light near the ceiling", "wall": "wall_bottom", "u": 420, "v": 245,
-      "size": { "w": 120, "h": 5, "d": 6 } },
-    { "id": "dl_1", "type": "downlight", "label": "Downlight", "x": 120, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_2", "type": "downlight", "label": "Downlight", "x": 120, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_3", "type": "downlight", "label": "Downlight", "x": 340, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_4", "type": "downlight", "label": "Downlight", "x": 340, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_5", "type": "downlight", "label": "Downlight", "x": 560, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_6", "type": "downlight", "label": "Downlight", "x": 560, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_7", "type": "downlight", "label": "Downlight", "x": 760, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
-    { "id": "dl_8", "type": "downlight", "label": "Downlight", "x": 760, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } }
+      "size": { "w": 120, "h": 5, "d": 6 }, "light": { "type": "tube", "kelvin": 6500, "intensity": 1 } },
+    { "id": "dl_1", "type": "downlight", "label": "Downlight", "x": 120, "z": 130, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_2", "type": "downlight", "label": "Downlight", "x": 120, "z": 270, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_3", "type": "downlight", "label": "Downlight", "x": 340, "z": 130, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_4", "type": "downlight", "label": "Downlight", "x": 340, "z": 270, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_5", "type": "downlight", "label": "Downlight", "x": 560, "z": 130, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_6", "type": "downlight", "label": "Downlight", "x": 560, "z": 270, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_7", "type": "downlight", "label": "Downlight", "x": 760, "z": 130, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } },
+    { "id": "dl_8", "type": "downlight", "label": "Downlight", "x": 760, "z": 270, "size": { "w": 12, "h": 2, "d": 12 }, "light": { "type": "spot", "kelvin": 4000, "intensity": 1 } }
   ]
 }

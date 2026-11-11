@@ -7,10 +7,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CatalogItem, ItemPlacement, Panel, Panels, Placement, Room, Scene, WallPlacement } from '../data/schema';
 import { ItemLayer } from './items';
+import { AMBIENT, createLight, resolveLight, updateGlow, updateLight } from './lighting';
 import { buildPanel } from './room/panel';
 import { buildRoom, type PickTarget, type RoomBuild } from './room/buildRoom';
 
-export type CameraMode = 'orbit' | 'top';
+export type CameraMode = 'orbit' | 'top' | 'eye';
 export type { PickTarget };
 
 const SELECT_COLOR = '#E07A2F';
@@ -65,6 +66,18 @@ export class Viewer {
   private readonly warnBoxes: THREE.Box3Helper[] = [];
   private warnUids: string[] = [];
   private readonly label: HTMLDivElement;
+  private readonly hemi: THREE.HemisphereLight;
+  private readonly sun: THREE.DirectionalLight;
+  private readonly fill: THREE.DirectionalLight;
+  /** Đèn của thiết bị hiện trạng (downlight, đèn tuýp). */
+  private fixtureLights: { id: string; type: string; spec: NonNullable<Room['fixtures'][number]['light']>; holder: THREE.Object3D; mesh: THREE.Object3D }[] = [];
+  private shadowsOn = false;
+  private mainRect = new THREE.Box2();
+  // camera tầm mắt
+  private eyeHeight = 1.6;
+  private readonly walk = new THREE.Vector2();
+  private readonly keys = new Set<string>();
+  private lastFrame = performance.now();
   private readonly resizeObserver: ResizeObserver;
   private disposed = false;
 
@@ -76,13 +89,18 @@ export class Viewer {
     host.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color('#1f1a17');
-    // Ánh sáng real-time đơn giản: trời + sàn hắt, một đèn chính từ trong phòng, một đèn phụ từ phía cửa sổ.
-    this.scene.add(new THREE.HemisphereLight('#fff8ee', '#bcae9c', 1.7));
-    const key = new THREE.DirectionalLight('#fff3e2', 0.9);
-    key.position.set(7, 9, 5);
-    const fill = new THREE.DirectionalLight('#eef4ff', 0.45);
-    fill.position.set(-3, 4, 1.5);
-    this.scene.add(key, fill, this.roomGroup);
+    // Ánh sáng nền: trời + sàn hắt, nắng qua cửa sổ (x < 0), đèn phụ trong phòng. Ngày/đêm đổi cường độ.
+    this.hemi = new THREE.HemisphereLight('#fff8ee', '#bcae9c', 1.15);
+    this.sun = new THREE.DirectionalLight('#fff1dc', 2.4);
+    this.sun.position.set(-4.5, 5.5, 1.2);
+    this.sun.target.position.set(3, 0, 2);
+    this.sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(this.sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 0.5, far: 25 });
+    this.sun.shadow.bias = -0.0005;
+    this.fill = new THREE.DirectionalLight('#fff3e2', 0.35);
+    this.fill.position.set(7, 9, 5);
+    this.scene.add(this.hemi, this.sun, this.sun.target, this.fill, this.roomGroup);
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const boxMat = this.selectionBox.material as THREE.LineBasicMaterial;
     boxMat.depthTest = false;
@@ -104,6 +122,9 @@ export class Viewer {
     host.addEventListener('pointermove', this.handleDragMove, { capture: true });
     host.addEventListener('pointerup', this.handleDragUp, { capture: true });
     host.addEventListener('pointercancel', this.handleDragUp, { capture: true });
+
+    window.addEventListener('keydown', this.handleKey);
+    window.addEventListener('keyup', this.handleKey);
 
     this.label = document.createElement('div');
     this.label.className = 'item-label';
@@ -132,6 +153,25 @@ export class Viewer {
     this.roomGroup.add(this.items.group);
     this.scene.add(this.roomGroup);
     this.bounds.copy(this.built.bounds);
+    const [mx0, mz0, mx1, mz1] = room.zones[0].rect;
+    this.mainRect.set(new THREE.Vector2(mx0 / 100 + 0.25, mz0 / 100 + 0.25), new THREE.Vector2(mx1 / 100 - 0.25, mz1 / 100 - 0.25));
+    // bóng đổ: mọi bề mặt nhận bóng; khối đặc (không phải kính / phông) đổ bóng
+    this.roomGroup.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.Material;
+      m.receiveShadow = true;
+      m.castShadow = !mat.transparent && !(mat as THREE.MeshBasicMaterial).isMeshBasicMaterial;
+    });
+    // đèn hiện trạng
+    this.fixtureLights = [];
+    for (const f of room.fixtures) {
+      const mesh = this.built.fixtures.get(f.id);
+      if (!f.light || !mesh) continue;
+      const holder = createLight({ ...f.light, at: f.light.at ?? (f.type === 'downlight' ? [0, -1.5, 0] : [0, 0, 0]) }, f.size, f.type === 'downlight' ? 'down' : 'forward');
+      mesh.add(holder);
+      this.fixtureLights.push({ id: f.id, type: f.type, spec: f.light, holder, mesh });
+    }
     this.setCameraMode(this.mode, true);
   }
 
@@ -157,7 +197,53 @@ export class Viewer {
 
     this.placements = new Map(scene.items.map((p) => [p.uid, p]));
     if (!this.drag) this.items?.sync(scene);
+
+    // ánh sáng: ngày / đêm, đèn hiện trạng, bóng đổ
+    const amb = AMBIENT[scene.mode];
+    this.hemi.intensity = amb.hemi;
+    this.sun.intensity = amb.sun;
+    this.sun.visible = amb.sun > 0;
+    this.fill.intensity = amb.fill;
+    this.fill.visible = amb.fill > 0;
+    ce.mat.emissiveIntensity = amb.ceilingGlow;
+    b.backdrop.traverse((o) => {
+      const mat = (o as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+      if (mat?.color) mat.color.copy(amb.backdrop);
+    });
+    for (const fl of this.fixtureLights) {
+      const r = resolveLight(fl.spec, scene.room.fixtureLights[fl.type]);
+      if (hidden.has(fl.id)) r.on = false;
+      updateLight(fl.holder, r);
+      updateGlow(fl.mesh, r);
+    }
+    this.setShadows(scene.shadows, scene.mode);
     this.updateSelectionBox();
+  }
+
+  /**
+   * Bóng đổ: ban ngày chỉ nắng qua cửa sổ đổ bóng; ban đêm 2 đèn tròn sáng nhất trong cảnh
+   * (đèn lồng, đèn sàn…) đổ bóng — giữ nhẹ cho tablet.
+   */
+  private setShadows(on: boolean, mode: 'day' | 'night'): void {
+    if (on !== this.shadowsOn) {
+      this.renderer.shadowMap.enabled = on;
+      this.shadowsOn = on;
+      this.scene.traverse((o) => {
+        const mat = (o as THREE.Mesh).material as THREE.Material | undefined;
+        if (mat && !Array.isArray(mat)) mat.needsUpdate = true;
+      });
+    }
+    this.sun.castShadow = on && mode === 'day';
+    const points: { light: THREE.PointLight; i: number }[] = [];
+    for (const obj of this.items?.objects.values() ?? []) {
+      obj.light?.traverse((l) => {
+        if (l instanceof THREE.PointLight) {
+          l.castShadow = false;
+          if (l.visible) points.push({ light: l, i: obj.resolved?.intensity ?? 0 });
+        }
+      });
+    }
+    if (on && mode === 'night') points.sort((a, b) => b.i - a.i).slice(0, 2).forEach((p) => (p.light.castShadow = true));
   }
 
   /** Bước bắt lưới khi kéo (cm); 0 = tắt. */
@@ -309,7 +395,22 @@ export class Viewer {
     this.mode = mode;
     const center = this.bounds.getCenter(new THREE.Vector3());
     const size = this.bounds.getSize(new THREE.Vector3());
-    if (mode === 'top') {
+    this.controls.enableZoom = mode !== 'eye';
+    this.controls.enablePan = mode !== 'eye';
+    this.controls.minPolarAngle = mode === 'eye' ? Math.PI * 0.2 : 0;
+    this.controls.maxPolarAngle = mode === 'eye' ? Math.PI * 0.8 : Math.PI;
+    this.controls.rotateSpeed = mode === 'eye' ? -0.45 : 1; // kéo = xoay đầu nhìn quanh
+    if (mode === 'eye') {
+      if (reset || changed) {
+        // đứng giữa khu chính, nhìn về phía cửa sổ
+        const c = this.mainRect.getCenter(new THREE.Vector2());
+        this.persp.position.set(c.x + 1.5, this.eyeHeight, c.y);
+      }
+      this.persp.position.y = this.eyeHeight;
+      this.controls.object = this.persp;
+      this.controls.target.copy(this.persp.position).add(new THREE.Vector3(-0.01, 0, 0));
+      this.controls.enableRotate = true;
+    } else if (mode === 'top') {
       this.ortho.position.set(center.x, 20, center.z);
       this.ortho.up.set(0, 0, -1);
       this.ortho.lookAt(center.x, 0, center.z);
@@ -330,6 +431,50 @@ export class Viewer {
       this.controls.enableRotate = true;
     }
     this.controls.update();
+  }
+
+  /** Độ cao mắt ở chế độ tầm mắt (m): ngồi 1.1, đứng 1.6. */
+  setEyeHeight(h: number): void {
+    this.eyeHeight = h;
+    if (this.mode !== 'eye') return;
+    const dy = h - this.persp.position.y;
+    this.persp.position.y += dy;
+    this.controls.target.y += dy;
+  }
+
+  /** Vector đi bộ từ joystick ảo: x = sang phải, y = tiến tới (−1…1). */
+  setWalk(x: number, y: number): void {
+    this.walk.set(x, y);
+  }
+
+  private readonly handleKey = (e: KeyboardEvent) => {
+    if ((e.target as HTMLElement).closest?.('input, textarea, select')) return;
+    const k = e.key.toLowerCase();
+    if (!['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) return;
+    if (e.type === 'keydown') {
+      if (this.mode !== 'eye') return;
+      this.keys.add(k);
+      e.preventDefault();
+    } else this.keys.delete(k);
+  };
+
+  /** Đi lại trong chế độ tầm mắt (bàn phím WASD / mũi tên + joystick ảo). */
+  private stepWalk(dt: number): void {
+    if (this.mode !== 'eye') return;
+    const k = this.keys;
+    const fwd = this.walk.y + (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
+    const side = this.walk.x + (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
+    if (!fwd && !side) return;
+    const dir = this.controls.target.clone().sub(this.persp.position).setY(0).normalize();
+    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
+    const speed = 1.4; // m/s
+    const move = dir.multiplyScalar(fwd).add(right.multiplyScalar(side)).clampLength(0, 1).multiplyScalar(speed * dt);
+    const next = this.persp.position.clone().add(move);
+    next.x = THREE.MathUtils.clamp(next.x, this.mainRect.min.x, this.mainRect.max.x);
+    next.z = THREE.MathUtils.clamp(next.z, this.mainRect.min.y, this.mainRect.max.y);
+    const delta = next.sub(this.persp.position);
+    this.persp.position.add(delta);
+    this.controls.target.add(delta);
   }
 
   /** Đặt camera 3D (m) — dùng cho preset góc nhìn và kiểm tra. */
@@ -419,6 +564,8 @@ export class Viewer {
     this.host.removeEventListener('pointerup', this.handleDragUp, { capture: true });
     this.host.removeEventListener('pointercancel', this.handleDragUp, { capture: true });
     this.label.remove();
+    window.removeEventListener('keydown', this.handleKey);
+    window.removeEventListener('keyup', this.handleKey);
     this.controls.dispose();
     disposeTree(this.roomGroup);
     this.renderer.dispose();
@@ -476,14 +623,14 @@ export class Viewer {
   private updateVisibility(cam: THREE.Vector3 = this.persp.position, mode: CameraMode = this.mode): void {
     const b = this.built;
     if (!b) return;
-    const active = this.cutawayEnabled && mode === 'orbit';
+    const active = this.cutawayEnabled && mode !== 'top';
     for (const w of b.cutaway) {
       // camera ở phía sau mặt trong của tường (cách > 30 cm) → tường đang chắn
       const behind = this.tmp.copy(cam).sub(w.mid).dot(w.normal) < -0.3;
       w.group.visible = !(active && behind);
     }
     // phông ngoài cửa sổ chỉ hiện khi camera đã xuống dưới trần (đang ở trong phòng)
-    const inside = mode === 'orbit' && cam.y < this.bounds.max.y;
+    const inside = mode !== 'top' && cam.y < this.bounds.max.y;
     b.backdrop.visible = inside;
     // trần: luôn hiện nếu bật nút "Trần" hoặc đang chọn trần; ngoài ra tự hiện khi camera ở trong phòng
     b.ceiling.visible = this.ceilingVisible || inside || this.selection?.kind === 'ceiling';
@@ -661,6 +808,9 @@ export class Viewer {
 
   private frame(): void {
     if (this.disposed) return;
+    const now = performance.now();
+    this.stepWalk(Math.min((now - this.lastFrame) / 1000, 0.1));
+    this.lastFrame = now;
     this.controls.update();
     this.updateVisibility();
     this.renderer.render(this.scene, this.activeCamera());

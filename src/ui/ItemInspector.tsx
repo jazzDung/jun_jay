@@ -4,7 +4,8 @@
  *  - Đồ treo tường: tường, vị trí dọc tường, độ cao tâm / mép dưới / mép trên.
  * Chung: cảnh báo của món, nhân bản, xoá.
  */
-import type { CatalogItem, ItemPlacement, Placement, Room, Wall, WallPlacement } from '../data/schema';
+import type { CatalogItem, ItemPlacement, LightOverride, Placement, Room, Wall, WallPlacement } from '../data/schema';
+import { LightFields } from './LightControls';
 import { footprint, wallDistances, type Warning } from '../analysis/checks';
 import { wallLength } from '../data/validate';
 import { sizeText } from './Catalog';
@@ -17,6 +18,7 @@ interface Props {
   placement: Placement;
   warnings: Warning[];
   onChange: (patch: Patch, tag?: string) => void;
+  onLight: (light: LightOverride | undefined, tag?: string) => void;
   onRotate: (delta: number) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -49,7 +51,7 @@ function NumField({ label, value, set, step = 5 }: { label: string; value: numbe
   );
 }
 
-export function ItemInspector({ room, item, placement: p, warnings, onChange, onRotate, onDuplicate, onRemove, onClose }: Props) {
+export function ItemInspector({ room, item, placement: p, warnings, onChange, onLight, onRotate, onDuplicate, onRemove, onClose }: Props) {
   return (
     <section class="panel">
       <header class="panel-head">
@@ -62,6 +64,13 @@ export function ItemInspector({ room, item, placement: p, warnings, onChange, on
       <p class="hint">{sizeText(item)}{item.notes ? ` — ${item.notes}` : ''}</p>
 
       {'wall' in p ? <WallFields room={room} item={item} p={p} onChange={onChange} /> : <FloorFields room={room} item={item} p={p} onChange={onChange} onRotate={onRotate} />}
+
+      {item.light && (
+        <>
+          <h3>Đèn</h3>
+          <LightFields spec={item.light} value={p.light} onChange={(v, tag) => onLight(v, tag && `light:${tag}`)} />
+        </>
+      )}
 
       {warnings.length > 0 && (
         <ul class="warn-list">

@@ -206,11 +206,33 @@ export function buildPrompt(data: DataBundle, scene: Scene, views: ViewFile[]): 
   push('');
 
   push(`## Lighting`);
-  if (scene.mode === 'night') push(`Evening: no daylight; warm interior lights only (2200–2700 K), cosy pools of light, very low ambient.`);
+  if (scene.mode === 'night') push(`Evening: dark outside the window, no daylight; the room is lit only by the interior lights listed below — pools of light, very low ambient.`);
   else push(`Daytime: soft natural daylight coming through the window wall from a leafy street (green trees outside), warm interior fill.`);
-  for (const l of scene.lights.filter((l) => l.on)) push(`- ${l.type} light, ${l.kelvin} K, intensity ${l.intensity}.`);
-  const tubes = room.fixtures.filter((f) => f.type === 'tube_light' && !hidden.has(f.id));
-  if (tubes.length) push(`- ${tubes.length} existing cool-white fluorescent tube light(s) mounted high on the long walls.`);
+  const tone = (k: number | undefined) => (k === undefined ? '' : k < 3200 ? `warm ${k} K` : k < 4500 ? `neutral ${k} K` : `cool ${k} K`);
+  const groups = new Map<string, { n: number; spec: NonNullable<(typeof room.fixtures)[number]['light']> }>();
+  for (const f of room.fixtures) {
+    if (!f.light || hidden.has(f.id)) continue;
+    const g = groups.get(f.type);
+    if (g) g.n++;
+    else groups.set(f.type, { n: 1, spec: f.light });
+  }
+  for (const [type, g] of groups) {
+    const o = scene.room.fixtureLights[type];
+    const name = type === 'downlight' ? 'recessed ceiling downlights' : 'fluorescent tube lights high on the long walls';
+    if (o?.on === false) push(`- ${g.n} ${name}: switched OFF.`);
+    else push(`- ${g.n} ${name}: ON, ${tone(o?.kelvin ?? g.spec.kelvin)}, ${Math.round((o?.intensity ?? g.spec.intensity) * 100)}% brightness.`);
+  }
+  const byId = new Map(catalog.items.map((i) => [i.id, i]));
+  for (const p of scene.items) {
+    const it = byId.get(p.catalogId);
+    if (!it?.light) continue;
+    const o = p.light;
+    if (o?.on === false) push(`- ${it.name}: switched OFF.`);
+    else {
+      const color = it.light.color && o?.kelvin === undefined ? `coloured light ${colorName(it.light.color)}` : tone(o?.kelvin ?? it.light.kelvin);
+      push(`- ${it.name}: ON, ${color}, ${Math.round((o?.intensity ?? it.light.intensity) * 100)}% brightness — a visible glowing light source.`);
+    }
+  }
   push('');
 
   push(`## Reference images (views/)`, `Coordinates: x = distance from the window wall, y = height, z = distance from the right (WC-side) wall, in metres.`);

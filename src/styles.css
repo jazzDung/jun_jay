@@ -240,3 +240,40 @@ body { background: var(--bg); color: var(--text); overscroll-behavior: none; }
   font: inherit; font-size: 14px; color: var(--text); background: #1f1a17; width: 100%;
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px;
 }
+
+/* ------------------------------------------------------------------ v4 */
+.light-fields { margin-top: 4px; }
+.slider-label { flex: none; width: 56px; font-size: 13px; color: var(--muted); }
+input.kelvin {
+  -webkit-appearance: none; appearance: none; height: 10px; border-radius: 999px;
+  background: linear-gradient(90deg, #ff9a3c, #ffd6a0 30%, #fff4e6 55%, #e8f0ff 80%, #b9d2ff);
+}
+input.kelvin::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+input.kelvin::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); }
+.hint.tight { margin: 0 0 0 64px; font-size: 12px; }
+.link.small { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.muted { color: var(--muted); font-weight: 400; }
+.color-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-left: 4px; border: 1px solid rgba(255, 255, 255, 0.3); }
+.light-group { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-top: 8px; }
+.light-group summary { cursor: pointer; font-size: 14px; min-height: 32px; display: flex; align-items: center; gap: 4px; }
+
+.joystick {
+  position: absolute; left: 24px; bottom: 56px; width: 120px; height: 120px; border-radius: 50%; z-index: 2;
+  background: rgba(42, 35, 31, 0.55); border: 2px solid rgba(255, 255, 255, 0.25); touch-action: none;
+  display: grid; place-items: center;
+}
+.joystick-knob {
+  width: 52px; height: 52px; border-radius: 50%; background: rgba(224, 122, 47, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); pointer-events: none; transition: transform 0.05s;
+}
+.eye-hint {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%); margin: 0; z-index: 1; pointer-events: none;
+  font-size: 12px; color: var(--text); background: rgba(31, 26, 23, 0.7); padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .joystick { bottom: calc(48% + 16px); }
+  .eye-hint { display: none; }
+}

@@ -9,6 +9,7 @@ import { wallLength } from '../data/validate';
 import type { PickTarget } from '../three/viewer';
 import { ColorField } from './ColorField';
 import { ItemInspector } from './ItemInspector';
+import { LightingSection } from './LightControls';
 import { PanelEditor } from './PanelEditor';
 
 /** Thao tác trên món đang chọn — App cài đặt (có undo/redo). */
@@ -148,6 +149,7 @@ function ItemPanel({ room, scene, catalog, warnings, itemActions, onClearSelecti
       item={item}
       placement={p}
       warnings={warnings.filter((w) => w.uids.includes(uid))}
+      onLight={(light, tag) => itemActions.update(uid, { light }, tag)}
       onChange={(patch, tag) => itemActions.update(uid, patch, tag)}
       onRotate={(d) => itemActions.rotate(uid, d)}
       onDuplicate={() => itemActions.duplicate(uid)}
@@ -215,6 +217,7 @@ function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExpo
           </ul>
         </>
       )}
+      <LightingSection room={room} scene={scene} onScene={onScene} />
       <h3>Ảnh</h3>
       <div class="btn-grid">
         <button class="btn accent" onClick={onExportAi} disabled={exporting} title="Bộ ảnh các góc nhìn + prompt mô tả chi tiết, nén .zip">

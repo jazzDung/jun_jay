@@ -7,6 +7,7 @@
  */
 import * as THREE from 'three';
 import type { CatalogItem, ItemPlacement, Placement, Scene, WallPlacement } from '../data/schema';
+import { createLight, resolveLight, updateGlow, updateLight, type Resolved } from './lighting';
 import type { WallFrame } from './room/wallFrame';
 import { buildShape } from './shapes';
 import { cm } from './units';
@@ -22,6 +23,9 @@ export interface ItemObject {
   root: THREE.Group;
   catalogId: string;
   wallId: string | null;
+  /** Nguồn sáng của món (nếu là đèn) + trạng thái hiện tại. */
+  light: THREE.Object3D | null;
+  resolved: Resolved | null;
 }
 
 export class ItemLayer {
@@ -51,13 +55,24 @@ export class ItemLayer {
         const root = new THREE.Group();
         root.name = `item:${p.uid}`;
         root.add(buildShape(item));
-        root.traverse((o) => (o.userData.pick = { kind: 'item', uid: p.uid }));
-        obj = { root, catalogId: p.catalogId, wallId };
+        root.traverse((o) => {
+          o.userData.pick = { kind: 'item', uid: p.uid };
+          const m = o as THREE.Mesh;
+          if (m.isMesh) m.castShadow = m.receiveShadow = true;
+        });
+        const light = item.light ? createLight(item.light, item.size, 'forward') : null;
+        if (light) root.add(light);
+        obj = { root, catalogId: p.catalogId, wallId, light, resolved: null };
         this.objects.set(p.uid, obj);
       }
       if (obj.root.parent !== parent) parent.add(obj.root);
       obj.wallId = wallId;
       this.place(obj.root, p, item);
+      if (item.light && obj.light) {
+        obj.resolved = resolveLight(item.light, p.light);
+        updateLight(obj.light, obj.resolved);
+        updateGlow(obj.root, obj.resolved);
+      }
     }
     for (const uid of [...this.objects.keys()]) if (!alive.has(uid)) this.remove(uid);
   }

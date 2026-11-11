@@ -467,11 +467,16 @@ function buildFixtureMesh(
       g.add(box(w * 0.85, 0.012, 0.01, std('#3A3A3A'), 0, -h / 2 + 0.05, d / 2)); // khe gió
       return g;
     }
-    case 'tube_light':
-      return box(w, h, d, new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#F4FBFF', emissiveIntensity: 1.2 }), 0, 0, 0);
+    case 'tube_light': {
+      const m = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#F4FBFF', emissiveIntensity: 1.2 });
+      m.userData.glow = true;
+      return box(w, h, d, m, 0, 0, 0);
+    }
     case 'downlight': {
       const geo = new THREE.CylinderGeometry(w / 2, w / 2, h, 24);
-      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#FFF6E8', emissiveIntensity: 1 }));
+      const m = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#FFF6E8', emissiveIntensity: 1 });
+      m.userData.glow = true;
+      return new THREE.Mesh(geo, m);
     }
     default:
       return box(w, h, d, std(color ?? '#F4F2EC', { roughness: 0.4 }), 0, 0, 0);

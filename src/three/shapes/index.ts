@@ -72,6 +72,7 @@ function makeMaterial(spec: MatSpec | undefined, fallback: string, glow: boolean
   if (glow && (type === 'paper' || type === 'acrylic')) {
     mat.emissive.set(color);
     mat.emissiveIntensity = 0.6;
+    mat.userData.glow = true; // lighting.updateGlow đổi theo bật/tắt + Kelvin
   }
   return mat;
 }
@@ -286,6 +287,7 @@ const penLamp: ShapeFn = ({ d, p, mat }) => {
     new THREE.CylinderGeometry(r * 0.35, r * 0.35, len * 0.8, 10),
     new THREE.MeshStandardMaterial({ color: '#fff4dc', emissive: '#ffe6b8', emissiveIntensity: 1.2 }),
   );
+  (core.material as THREE.Material).userData.glow = true;
   core.position.y = tube.position.y;
   const capMat = mat('cap', '#2B35D9');
   const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 1.15, len * 0.18, 20), capMat);
@@ -430,8 +432,18 @@ const plant: ShapeFn = ({ w, h, p, mat }) => {
   return out;
 };
 
-const tubeLight: ShapeFn = ({ w, h, d }) => [
-  box(w, h, d, new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#F4FBFF', emissiveIntensity: 1.2 })),
+function glowMat(color = '#ffffff'): THREE.MeshStandardMaterial {
+  const m = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.2 });
+  m.userData.glow = true;
+  return m;
+}
+
+const tubeLight: ShapeFn = ({ w, h, d }) => [box(w, h, d, glowMat())];
+
+/** Dải LED trong máng nhôm: máng mờ + dải phát sáng ở mặt trước. */
+const ledStrip: ShapeFn = ({ w, h, d, mat }) => [
+  box(w, h, d * 0.7, new THREE.MeshStandardMaterial({ color: '#bfc3c7', metalness: 0.3, roughness: 0.4 }), 0, 0, -d * 0.15),
+  box(w - 0.01, h * 0.6, d * 0.3, glowMat((mat('body') as THREE.MeshStandardMaterial).color.getStyle()), 0, h * 0.2, d * 0.35),
 ];
 
 const plainBox: ShapeFn = ({ w, d, h, mat }) => [box(w, h, d, mat('body'), 0, 0, 0, 0.005)];
@@ -461,6 +473,7 @@ export const SHAPES: Record<string, ShapeFn> = {
   lantern,
   plant,
   tube_light: tubeLight,
+  led_strip: ledStrip,
   frame,
   clock,
   panel_sheet: panelSheet,

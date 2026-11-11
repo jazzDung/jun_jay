@@ -18,6 +18,33 @@ export const Range = z
 /** Danh sách chú thích những số còn là ước lượng, cần đo lại. */
 const Todo = z.array(z.string()).optional();
 
+// ------------------------------------------------------------------- đèn
+
+/**
+ * Nguồn sáng của một món catalog / thiết bị hiện trạng.
+ *  point = bóng tròn toả mọi hướng; spot = chiếu theo hướng trước (+z) / xuống (downlight);
+ *  tube = dải sáng chữ nhật (đèn tuýp, LED hắt) hướng ra trước.
+ */
+export const LightSpec = z.object({
+  type: z.enum(['point', 'spot', 'tube', 'area']),
+  kelvin: z.number().min(1000).max(10000).optional(),
+  /** Màu cố định cho đèn màu (RGB/LED màu); ưu tiên hơn kelvin. */
+  color: Hex.optional(),
+  /** Độ sáng tương đối (1 ≈ bóng 60 W ấm). */
+  intensity: z.number().nonnegative(),
+  /** Điểm phát sáng (cm) tính từ gốc món (tâm đáy); mặc định giữa hộp bao. */
+  at: z.tuple([z.number(), z.number(), z.number()]).optional(),
+});
+export type LightSpec = z.infer<typeof LightSpec>;
+
+/** Ghi đè trạng thái đèn trong cảnh (bật/tắt, nhiệt độ màu, độ sáng). */
+export const LightOverride = z.object({
+  on: z.boolean().default(true),
+  kelvin: z.number().min(1000).max(10000).optional(),
+  intensity: z.number().min(0).max(4).optional(),
+});
+export type LightOverride = z.infer<typeof LightOverride>;
+
 // ---------------------------------------------------------------- room.json
 
 /** Ốp pano / lam sóng lên một mảng tường. Profile và màu gỗ tra trong panels.json. */
@@ -144,6 +171,8 @@ export const Fixture = z.object({
   z: z.number().optional(),
   size: z.object({ w: z.number(), h: z.number(), d: z.number() }),
   color: Hex.optional(),
+  /** Thiết bị là đèn (downlight, đèn tuýp). */
+  light: LightSpec.optional(),
   todo: Todo,
 });
 
@@ -231,14 +260,6 @@ export const Material = z.object({
   texture: z.string().optional(),
 });
 
-export const LightSpec = z.object({
-  type: z.enum(['point', 'spot', 'tube', 'area']),
-  kelvin: z.number().min(1000).max(10000).optional(),
-  /** Màu cố định cho đèn màu (RGB/LED màu); ưu tiên hơn kelvin. */
-  color: Hex.optional(),
-  intensity: z.number().nonnegative(),
-});
-
 export const CatalogItem = z.object({
   id: z.string().regex(/^[a-z0-9_]+$/, 'id chỉ gồm a-z, 0-9, _'),
   name: z.string(),
@@ -280,6 +301,8 @@ export const ItemPlacement = z.object({
   rot: z.number().default(0),
   /** Chỉ đồ treo trần: khoảng thả từ trần xuống tới đỉnh vật (cm). */
   drop: z.number().nonnegative().optional(),
+  /** Món là đèn: trạng thái trong cảnh này. */
+  light: LightOverride.optional(),
 });
 export type ItemPlacement = z.infer<typeof ItemPlacement>;
 
@@ -290,6 +313,7 @@ export const WallPlacement = z.object({
   wall: z.string(),
   u: z.number(),
   v: z.number(),
+  light: LightOverride.optional(),
 });
 export type WallPlacement = z.infer<typeof WallPlacement>;
 
@@ -324,10 +348,14 @@ export const Scene = z.object({
       // Sàn gỗ hiện trạng giữ nguyên — không có ghi đè màu sàn.
       /** id thiết bị hiện trạng (room.json fixtures) đang bị ẩn — vd tháo đèn tuýp. */
       hiddenFixtures: z.array(z.string()).default([]),
+      /** Đèn hiện trạng theo nhóm loại thiết bị ('downlight', 'tube_light'). */
+      fixtureLights: z.record(z.string(), LightOverride).default({}),
     })
-    .default({ walls: {}, hiddenFixtures: [] }),
+    .default({ walls: {}, hiddenFixtures: [], fixtureLights: {} }),
   items: z.array(Placement).default([]),
   lights: z.array(SceneLight).default([]),
   mode: z.enum(['day', 'night']).default('day'),
+  /** Bóng đổ (tắt để nhẹ máy trên tablet). */
+  shadows: z.boolean().default(false),
 });
 export type Scene = z.infer<typeof Scene>;

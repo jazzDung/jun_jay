@@ -16,6 +16,7 @@ import {
 } from '../state/sceneStore';
 import { Viewer, type CameraMode, type PickTarget } from '../three/viewer';
 import { Catalog } from './Catalog';
+import { Joystick } from './LightControls';
 import { Sidebar, type ItemActions } from './Sidebar';
 
 type LoadState =
@@ -45,6 +46,7 @@ export function App() {
   const [cutaway, setCutaway] = useState(true);
   const [ceiling, setCeiling] = useState(false);
   const [snap, setSnap] = useState(true);
+  const [eyeHeight, setEyeHeight] = useState<1.1 | 1.6>(1.6);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -200,6 +202,7 @@ export function App() {
     const { room, panels, catalog } = state.data;
     const viewer = new Viewer(hostRef.current);
     viewer.setRoom(room, panels, catalog.items);
+    viewer.setEyeHeight(eyeHeight);
     viewer.onPick = (t) => setSelection(t);
     viewer.onItemMove = (uid, patch) => updateItems((items) => items.map((p) => (p.uid === uid ? ({ ...p, ...patch } as Placement) : p)));
     viewer.labelFor = (_uid, p) => {
@@ -379,7 +382,24 @@ export function App() {
         <div class="seg" role="group" aria-label="Camera">
           <button aria-pressed={camera === 'orbit'} onClick={() => switchCamera('orbit')}>3D</button>
           <button aria-pressed={camera === 'top'} onClick={() => switchCamera('top')}>Mặt bằng</button>
+          <button aria-pressed={camera === 'eye'} onClick={() => switchCamera('eye')} title="Đi lại trong quán ở tầm mắt">Tầm mắt</button>
         </div>
+        {camera === 'eye' && (
+          <div class="seg" role="group" aria-label="Độ cao mắt">
+            {([1.1, 1.6] as const).map((h) => (
+              <button
+                key={h}
+                aria-pressed={eyeHeight === h}
+                onClick={() => {
+                  setEyeHeight(h);
+                  viewerRef.current?.setEyeHeight(h);
+                }}
+              >
+                {h === 1.1 ? 'Ngồi 110' : 'Đứng 160'}
+              </button>
+            ))}
+          </div>
+        )}
         <div class="seg">
           <button aria-pressed={snap} onClick={() => setSnap(!snap)} title="Bắt lưới 5 cm khi kéo đồ">Lưới 5 cm</button>
           <button
@@ -414,6 +434,12 @@ export function App() {
 
       <main class={`stage${catalogOpen ? ' catalog-open' : ''}`}>
         <div class="viewport" ref={hostRef} />
+        {camera === 'eye' && (
+          <>
+            <Joystick onChange={(x, y) => viewerRef.current?.setWalk(x, y)} />
+            <p class="eye-hint">Kéo màn hình để nhìn quanh · joystick / WASD / phím mũi tên để đi</p>
+          </>
+        )}
         {catalogOpen && <Catalog items={catalog.items} scene={scene} onAdd={addItem} onClose={() => setCatalogOpen(false)} />}
         <Sidebar
           room={room}
