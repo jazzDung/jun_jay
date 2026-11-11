@@ -1,0 +1,155 @@
+{
+  "units": "cm",
+  "ceilingHeight": 260,
+  "ceiling": { "type": "drop_tile", "color": "#F4F3EF", "tile": 60 },
+  "todo": [
+    "ceilingHeight: đo thật (ước lượng 250–280)",
+    "Dầm/bậc trần gần cửa sổ: vị trí + độ sâu",
+    "Mã màu tường sage thật (đang để #9DB4AA)"
+  ],
+
+  "zones": [
+    { "id": "main", "label": "Không gian chính", "rect": [0, 0, 800, 400],
+      "floor": { "color": "#CBC3B6", "material": "vinyl_oak_x" } },
+    { "id": "wc", "label": "WC", "rect": [800, 0, 950, 100],
+      "floor": { "color": "#D6CCB4", "material": "tile_30" }, "interiorWallColor": "#EDEBE4" },
+    { "id": "bar", "label": "Phòng pha chế", "rect": [800, 100, 950, 300],
+      "floor": { "color": "#8E3B2F", "material": "tile_30" }, "interiorWallColor": "#EFEBDD" },
+    { "id": "hall", "label": "Hành lang lối vào", "rect": [800, 300, 950, 400],
+      "floor": { "color": "#8C8780", "material": "concrete" }, "interiorWallColor": "#E9E6DF" }
+  ],
+
+  "walls": [
+    {
+      "id": "wall_window", "label": "Tường cửa sổ (x=0)",
+      "from": [0, 0], "to": [0, 400], "faces": "main", "thickness": 20,
+      "color": "#5B8A80", "panel": null,
+      "claddings": [
+        { "id": "clad_window_sill", "type": "pvc_vgroove", "color": "#E6E7E6", "u": [0, 400], "v": [0, 90],
+          "todo": ["chiều cao ốp dưới bậu (ước lượng 90)"] }
+      ],
+      "mouldings": null
+    },
+    {
+      "id": "wall_top", "label": "Tường trên (z=0)",
+      "from": [0, 0], "to": [800, 0], "faces": "main", "thickness": 15,
+      "color": "#9DB4AA", "panel": null,
+      "claddings": [
+        { "id": "clad_top_window_return", "type": "pvc_hstripe", "color": "#EDEDEA", "u": [0, 50], "v": [0, 260],
+          "todo": ["bề rộng mảng ốp sọc ngang cạnh cửa sổ (ước lượng 50)"] }
+      ],
+      "mouldings": {
+        "enabled": true, "color": null, "uRange": [50, 800], "bays": 5,
+        "upper": [95, 225], "lower": [18, 78], "gap": 14, "profileWidth": 4, "baseboardHeight": 8,
+        "todo": ["số ô và cao độ phào chỉ — đang ước lượng từ ảnh"]
+      }
+    },
+    {
+      "id": "wall_bottom", "label": "Tường dưới (z=400)",
+      "from": [0, 400], "to": [800, 400], "faces": "main", "thickness": 15,
+      "color": "#9DB4AA", "panel": null,
+      "claddings": [
+        { "id": "clad_bottom_window_return", "type": "pvc_hstripe", "color": "#EDEDEA", "u": [0, 50], "v": [0, 260],
+          "todo": ["bề rộng mảng ốp sọc ngang cạnh cửa sổ (ước lượng 50)"] }
+      ],
+      "mouldings": {
+        "enabled": true, "color": null, "uRange": [50, 800], "bays": 5,
+        "upper": [95, 225], "lower": [18, 78], "gap": 14, "profileWidth": 4, "baseboardHeight": 8,
+        "todo": ["số ô và cao độ phào chỉ — đang ước lượng từ ảnh"]
+      }
+    },
+    {
+      "id": "wall_back_wc", "label": "Tường sau — mặt WC (x=800)",
+      "from": [800, 0], "to": [800, 100], "faces": "main", "thickness": 10,
+      "color": "#9DB4AA", "panel": null, "claddings": [],
+      "mouldings": null
+    },
+    {
+      "id": "wall_back_bar", "label": "Tường sau — mặt phòng pha chế (x=800)",
+      "from": [800, 100], "to": [800, 300], "faces": "main", "thickness": 10,
+      "color": "#9DB4AA", "panel": null, "claddings": [],
+      "mouldings": {
+        "enabled": true, "color": null, "uRange": [0, 200], "bays": 1,
+        "upper": [95, 225], "lower": [18, 78], "gap": 20, "profileWidth": 4, "baseboardHeight": 8,
+        "todo": ["phào chỉ sẽ bị cắt khi đập ô thông — có thể tắt"]
+      }
+    },
+    {
+      "id": "wall_back_hall", "label": "Tường sau — mặt hành lang (x=800)",
+      "from": [800, 300], "to": [800, 400], "faces": "main", "thickness": 10,
+      "color": "#9DB4AA", "panel": null, "claddings": [], "mouldings": null
+    },
+    {
+      "id": "wall_hall_bar", "label": "Hành lang — vách phòng pha chế (z=300)",
+      "from": [800, 300], "to": [950, 300], "faces": "hall", "thickness": 10,
+      "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
+    },
+    {
+      "id": "wall_hall_outer", "label": "Hành lang — tường cửa ra vào (x=950)",
+      "from": [950, 300], "to": [950, 400], "faces": "hall", "thickness": 15,
+      "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
+    },
+    {
+      "id": "wall_hall_side", "label": "Hành lang — tường ngoài (z=400)",
+      "from": [800, 400], "to": [950, 400], "faces": "hall", "thickness": 15,
+      "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
+    }
+  ],
+
+  "openings": [
+    {
+      "id": "window_front", "label": "Cửa sổ kính kéo", "wall": "wall_window", "type": "window",
+      "u": [20, 380], "sill": 90, "height": 110,
+      "frames": [
+        { "u": [20, 195], "cols": 2, "rows": 1, "sliding": true },
+        { "u": [205, 380], "cols": 2, "rows": 2, "sliding": true }
+      ],
+      "todo": ["cao bậu (~90), chiều cao kính (~110), mép trái/phải và vách giữa 2 cụm"]
+    },
+    {
+      "id": "door_wc", "label": "Cửa WC", "wall": "wall_back_wc", "type": "door",
+      "u": [15, 80], "sill": 0, "height": 200,
+      "door": { "hinge": "end", "opensInto": "main", "color": "#F2EFE8" },
+      "todo": ["bề rộng cửa (~65)", "bản lề phía nào — ảnh cho thấy cánh mở về phía phòng pha chế, brief ghi phía tường trên"]
+    },
+    {
+      "id": "passthrough_bar", "label": "Ô thông phòng pha chế (sẽ đập)", "wall": "wall_back_bar", "type": "passthrough",
+      "u": [30, 170], "sill": 90, "height": 100,
+      "todo": ["vị trí, bề rộng, cao bậu, chiều cao ô"]
+    },
+    {
+      "id": "doorway_hall", "label": "Cửa thông hành lang", "wall": "wall_back_hall", "type": "door",
+      "u": [8, 93], "sill": 0, "height": 210,
+      "door": { "hinge": "end", "opensInto": "hall", "color": "#E4DFD4" },
+      "todo": ["bề rộng (~85)"]
+    },
+    {
+      "id": "door_bar", "label": "Cửa vào phòng pha chế", "wall": "wall_hall_bar", "type": "door",
+      "u": [40, 110], "sill": 0, "height": 200,
+      "door": { "hinge": "start", "opensInto": "bar", "color": "#E4DFD4" },
+      "todo": ["vị trí và bề rộng (~70)"]
+    },
+    {
+      "id": "door_entrance", "label": "Cửa ra vào", "wall": "wall_hall_outer", "type": "door",
+      "u": [0, 100], "sill": 0, "height": 210,
+      "door": { "hinge": "start", "opensInto": "hall", "color": "#6E4B33" }
+    }
+  ],
+
+  "fixtures": [
+    { "id": "ac_window", "type": "ac_unit", "label": "Máy lạnh Daikin", "wall": "wall_window", "u": 150, "v": 228,
+      "size": { "w": 80, "h": 28, "d": 20 }, "color": "#EDE6CF", "todo": ["vị trí chính xác"] },
+    { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường trên", "wall": "wall_top", "u": 420, "v": 245,
+      "size": { "w": 120, "h": 5, "d": 6 } },
+    { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường dưới", "wall": "wall_bottom", "u": 420, "v": 245,
+      "size": { "w": 120, "h": 5, "d": 6 } },
+    { "id": "dl_1", "type": "downlight", "label": "Downlight", "x": 120, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_2", "type": "downlight", "label": "Downlight", "x": 120, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_3", "type": "downlight", "label": "Downlight", "x": 340, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_4", "type": "downlight", "label": "Downlight", "x": 340, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_5", "type": "downlight", "label": "Downlight", "x": 560, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_6", "type": "downlight", "label": "Downlight", "x": 560, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_7", "type": "downlight", "label": "Downlight", "x": 760, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
+    { "id": "dl_8", "type": "downlight", "label": "Downlight", "x": 760, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } }
+  ]
+}

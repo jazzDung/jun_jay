@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "Phòng trống (hiện trạng)",
+  "room": { "walls": {} },
+  "items": [],
+  "lights": [],
+  "mode": "day"
+}
