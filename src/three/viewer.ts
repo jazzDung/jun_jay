@@ -203,7 +203,59 @@ export class Viewer {
     this.ceilingVisible = visible;
   }
 
-  /** Chụp khung hình hiện tại ra PNG (dùng cho Export for AI ở lát sau). */
+  /**
+   * Render một góc nhìn ra canvas riêng ở kích thước cố định, không đổi camera đang dùng.
+   * 'plan' = mặt bằng nhìn thẳng từ trên (không trần, đủ tường); trả kèm camera để
+   * chiếu toạ độ khi vẽ nhãn.
+   */
+  renderStill(
+    view: 'plan' | { position: [number, number, number]; target: [number, number, number]; fov: number },
+    width: number,
+    height: number,
+  ): { canvas: HTMLCanvasElement; camera: THREE.Camera } {
+    const prevSize = this.renderer.getSize(new THREE.Vector2());
+    const prevRatio = this.renderer.getPixelRatio();
+    this.renderer.setPixelRatio(1);
+    this.renderer.setSize(width, height, false);
+
+    let camera: THREE.Camera;
+    if (view === 'plan') {
+      const center = this.bounds.getCenter(new THREE.Vector3());
+      const size = this.bounds.getSize(new THREE.Vector3());
+      const aspect = width / height;
+      let halfW = (size.x * 1.22) / 2;
+      let halfH = (size.z * 1.25) / 2;
+      if (halfW / halfH > aspect) halfH = halfW / aspect;
+      else halfW = halfH * aspect;
+      const ortho = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.05, 100);
+      ortho.position.set(center.x, 20, center.z);
+      ortho.up.set(0, 0, -1);
+      ortho.lookAt(center.x, 0, center.z);
+      camera = ortho;
+      this.updateVisibility(ortho.position, 'top');
+    } else {
+      const persp = new THREE.PerspectiveCamera(view.fov, width / height, 0.05, 100);
+      persp.position.set(...view.position);
+      persp.lookAt(...view.target);
+      camera = persp;
+      this.updateVisibility(persp.position, 'orbit');
+    }
+    camera.updateMatrixWorld();
+    this.selectionBox.visible = false;
+    this.renderer.render(this.scene, camera);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d')!.drawImage(this.renderer.domElement, 0, 0);
+
+    this.renderer.setPixelRatio(prevRatio);
+    this.renderer.setSize(prevSize.x, prevSize.y, false);
+    this.updateVisibility();
+    return { canvas, camera };
+  }
+
+  /** Chụp khung hình hiện tại ra PNG. */
   snapshot(): string {
     this.renderer.render(this.scene, this.activeCamera());
     return this.renderer.domElement.toDataURL('image/png');
@@ -269,18 +321,17 @@ export class Viewer {
   // ------------------------------------------------------------- frame
 
   private readonly tmp = new THREE.Vector3();
-  private updateVisibility(): void {
+  private updateVisibility(cam: THREE.Vector3 = this.persp.position, mode: CameraMode = this.mode): void {
     const b = this.built;
     if (!b) return;
-    const active = this.cutawayEnabled && this.mode === 'orbit';
-    const cam = this.persp.position;
+    const active = this.cutawayEnabled && mode === 'orbit';
     for (const w of b.cutaway) {
       // camera ở phía sau mặt trong của tường (cách > 30 cm) → tường đang chắn
       const behind = this.tmp.copy(cam).sub(w.mid).dot(w.normal) < -0.3;
       w.group.visible = !(active && behind);
     }
     // phông ngoài cửa sổ chỉ hiện khi camera đã xuống dưới trần (đang ở trong phòng)
-    const inside = this.mode === 'orbit' && cam.y < this.bounds.max.y;
+    const inside = mode === 'orbit' && cam.y < this.bounds.max.y;
     b.backdrop.visible = inside;
     // trần: luôn hiện nếu bật nút "Trần" hoặc đang chọn trần; ngoài ra tự hiện khi camera ở trong phòng
     b.ceiling.visible = this.ceilingVisible || inside || this.selection?.kind === 'ceiling';

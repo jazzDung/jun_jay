@@ -81,6 +81,23 @@ Sau đó chạy `npm run validate-data`.
   `SOURCES` trong `tools/make_panel_textures.py`, chạy `python tools/make_panel_textures.py`, rồi chép màu +
   `period` in ra vào `panels.json`.
 
+## Xuất cho AI (Gemini)
+
+Panel **Cảnh** → **Xuất cho AI** tải về một file `.zip`:
+
+| File | Nội dung |
+|---|---|
+| `views/00_plan.png` | Mặt bằng nhìn từ trên, có tên khu, kích thước, thước 1 m |
+| `views/01…06_*.png` | 6 góc nhìn cố định (từ cửa vào, từ cửa sổ, 2 góc chéo, 2 góc ngồi 110 cm) |
+| `materials/*.jpg` | Ảnh vân gỗ thật của lớp ốp đang dùng |
+| `prompt.md` | Mô tả bằng tiếng Anh: kích thước, ô cửa, màu từng tường (mã hex + tên màu), lớp ốp, thiết bị, đồ đạc, ánh sáng, vị trí camera từng ảnh |
+| `scene.json` | Cảnh gốc |
+
+Cách dùng: mở Gemini → đính kèm một ảnh trong `views/` (và ảnh `materials/` nếu có) → dán nội dung `prompt.md`
+→ thêm câu ở mục *Per-image request* cuối file.
+
+Thêm / sửa góc nhìn: mảng `views` trong `public/data/room.json` (toạ độ cm, `description` tiếng Anh).
+
 ## Lưu cảnh
 
 - **Tự lưu** vào trình duyệt của từng thiết bị (Tab và Mac lưu riêng).
@@ -112,7 +129,7 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 - [x] Lát 2 — dựng phòng đầy đủ: khoét ô cửa, cửa sổ, cánh cửa + vùng quét, phào chỉ, ốp PVC, trần thả, máy lạnh, đèn; tự ẩn tường chắn tầm nhìn
 - [x] Lát 3 — chọn tường/trần → đổi màu (color picker + hex + bảng màu concept), bật/tắt phào chỉ, autosave, Export/Import JSON, Share link
 - [x] Lát 4 — ốp lam sóng: texture từ ảnh mẫu thật, biên dạng sóng 3D, ốp cả tường / nửa tường / tuỳ chỉnh, kín trần / ốp lửng, cả 2 tường dài; ẩn/hiện đèn & thiết bị hiện trạng
-- [ ] Lát 5 — Export for AI (bộ ảnh góc nhìn + prompt cho Gemini), deploy
+- [x] Lát 5 — Export for AI (mặt bằng có nhãn + 6 góc nhìn + prompt.md + ảnh vật liệu, .zip), chụp ảnh PNG, deploy GitHub Pages
 
 ### Future improvements
 

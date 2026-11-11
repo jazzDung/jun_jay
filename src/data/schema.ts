@@ -66,6 +66,8 @@ export const Mouldings = z.object({
 export const Wall = z.object({
   id: z.string(),
   label: z.string(),
+  /** Tên tiếng Anh dùng trong prompt Export for AI. */
+  en: z.string().optional(),
   from: Vec2,
   to: Vec2,
   /** Vùng (zone) mà mặt tường này nhìn vào. */
@@ -90,6 +92,8 @@ export const WindowFrame = z.object({
 export const Opening = z.object({
   id: z.string(),
   label: z.string(),
+  /** Tên tiếng Anh dùng trong prompt Export for AI. */
+  en: z.string().optional(),
   wall: z.string(),
   type: z.enum(['door', 'doorway', 'window', 'passthrough']),
   u: Range,
@@ -116,6 +120,8 @@ export const Surface = z.object({
 export const Zone = z.object({
   id: z.string(),
   label: z.string(),
+  /** Tên tiếng Anh dùng trong prompt Export for AI. */
+  en: z.string().optional(),
   /** [x0, z0, x1, z1] */
   rect: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   floor: Surface,
@@ -128,6 +134,8 @@ export const Fixture = z.object({
   id: z.string(),
   type: z.enum(['ac_unit', 'tube_light', 'downlight', 'outlet', 'switch']),
   label: z.string(),
+  /** Tên tiếng Anh dùng trong prompt Export for AI. */
+  en: z.string().optional(),
   /** Gắn tường: wall + u + v (tâm). Gắn trần: x + z. */
   wall: z.string().optional(),
   u: z.number().optional(),
@@ -138,6 +146,18 @@ export const Fixture = z.object({
   color: Hex.optional(),
   todo: Todo,
 });
+
+/** Góc camera cố định (cm) — dùng cho Export for AI và các preset góc nhìn. */
+export const CameraView = z.object({
+  id: z.string().regex(/^[a-z0-9_]+$/),
+  label: z.string(),
+  /** Mô tả bằng tiếng Anh cho prompt (Gemini hiểu tốt nhất). */
+  description: z.string(),
+  position: z.tuple([z.number(), z.number(), z.number()]),
+  target: z.tuple([z.number(), z.number(), z.number()]),
+  fov: z.number().min(20).max(100).default(62),
+});
+export type CameraView = z.infer<typeof CameraView>;
 
 export const Room = z.object({
   units: z.literal('cm'),
@@ -151,6 +171,7 @@ export const Room = z.object({
   walls: z.array(Wall).min(1),
   openings: z.array(Opening),
   fixtures: z.array(Fixture),
+  views: z.array(CameraView).default([]),
   todo: Todo,
 });
 export type Room = z.infer<typeof Room>;

@@ -12,6 +12,7 @@ import {
   saveLocal,
   type SceneSource,
 } from '../state/sceneStore';
+import { downloadSnapshot, exportForAi } from '../export/exportAi';
 import { Viewer, type CameraMode, type PickTarget } from '../three/viewer';
 import { Sidebar } from './Sidebar';
 
@@ -36,6 +37,7 @@ export function App() {
   const [cutaway, setCutaway] = useState(true);
   const [ceiling, setCeiling] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // 1. Nạp dữ liệu + chọn cảnh ban đầu (link chia sẻ → bản tự lưu → mặc định)
   useEffect(() => {
@@ -158,6 +160,20 @@ export function App() {
     setToast({ kind: 'info', lines: [`Đã nhập "${r.data.name}".`, ...r.warnings] });
   };
 
+  const exportAi = async () => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    setExporting(true);
+    try {
+      const r = await exportForAi(viewer, state.data, scene);
+      setToast({ kind: 'info', lines: [`Đã xuất ${r.fileName} (mặt bằng + ${r.count - 1} góc nhìn + prompt.md).`] });
+    } catch (e) {
+      setToast({ kind: 'error', lines: ['Xuất cho AI thất bại:', (e as Error).message] });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const reset = () => {
     clearLocal();
     if (source === 'shared') clearShareHash();
@@ -219,6 +235,9 @@ export function App() {
           onImport={importFile}
           onShare={share}
           onReset={reset}
+          onExportAi={exportAi}
+          onSnapshot={() => viewerRef.current && downloadSnapshot(viewerRef.current)}
+          exporting={exporting}
         />
         {toast && (
           <div class={`toast ${toast.kind}`} role="status">

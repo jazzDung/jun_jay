@@ -12,6 +12,7 @@
     "validate-data": "vite-node scripts/validate-data.ts"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "preact": "^11.2.0",
     "three": "^0.187.0",
     "zod": "^4.6.7"

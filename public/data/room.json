@@ -9,19 +9,19 @@
   ],
 
   "zones": [
-    { "id": "main", "label": "Không gian chính", "rect": [0, 0, 800, 400],
+    { "id": "main", "label": "Không gian chính", "en": "main room", "rect": [0, 0, 800, 400],
       "floor": { "color": "#D6C6AE", "material": "wood_oak_x" } },
-    { "id": "wc", "label": "WC", "rect": [800, 0, 950, 100],
+    { "id": "wc", "label": "WC", "en": "WC (toilet)", "rect": [800, 0, 950, 100],
       "floor": { "color": "#D6CCB4", "material": "tile_30" }, "interiorWallColor": "#EDEBE4" },
-    { "id": "bar", "label": "Phòng pha chế", "rect": [800, 100, 950, 300],
+    { "id": "bar", "label": "Phòng pha chế", "en": "bar / drink-prep room", "rect": [800, 100, 950, 300],
       "floor": { "color": "#8E3B2F", "material": "tile_30" }, "interiorWallColor": "#EFEBDD" },
-    { "id": "hall", "label": "Hành lang lối vào", "rect": [800, 300, 950, 400],
+    { "id": "hall", "label": "Hành lang lối vào", "en": "entry hallway", "rect": [800, 300, 950, 400],
       "floor": { "color": "#8C8780", "material": "concrete" }, "interiorWallColor": "#E9E6DF" }
   ],
 
   "walls": [
     {
-      "id": "wall_window", "label": "Tường cửa sổ (x=0)",
+      "id": "wall_window", "label": "Tường cửa sổ (x=0)", "en": "window wall (front)",
       "from": [0, 0], "to": [0, 400], "faces": "main", "thickness": 20,
       "color": "#5B8A80", "panel": null,
       "claddings": [
@@ -31,7 +31,7 @@
       "mouldings": null
     },
     {
-      "id": "wall_top", "label": "Tường phải — phía WC (z=0)",
+      "id": "wall_top", "label": "Tường phải — phía WC (z=0)", "en": "right long wall (WC side)",
       "from": [0, 0], "to": [800, 0], "faces": "main", "thickness": 15,
       "color": "#9DB4AA", "panel": null,
       "claddings": [
@@ -45,7 +45,7 @@
       }
     },
     {
-      "id": "wall_bottom", "label": "Tường trái — phía lối vào (z=400)",
+      "id": "wall_bottom", "label": "Tường trái — phía lối vào (z=400)", "en": "left long wall (entrance side)",
       "from": [0, 400], "to": [800, 400], "faces": "main", "thickness": 15,
       "color": "#9DB4AA", "panel": null,
       "claddings": [
@@ -59,13 +59,13 @@
       }
     },
     {
-      "id": "wall_back_wc", "label": "Tường sau — mặt WC (x=800)",
+      "id": "wall_back_wc", "label": "Tường sau — mặt WC (x=800)", "en": "back wall, WC section",
       "from": [800, 0], "to": [800, 100], "faces": "main", "thickness": 10,
       "color": "#9DB4AA", "panel": null, "claddings": [],
       "mouldings": null
     },
     {
-      "id": "wall_back_bar", "label": "Tường sau — mặt phòng pha chế (x=800)",
+      "id": "wall_back_bar", "label": "Tường sau — mặt phòng pha chế (x=800)", "en": "back wall, bar section",
       "from": [800, 100], "to": [800, 300], "faces": "main", "thickness": 10,
       "color": "#9DB4AA", "panel": null, "claddings": [],
       "mouldings": {
@@ -75,22 +75,22 @@
       }
     },
     {
-      "id": "wall_back_hall", "label": "Tường sau — mặt hành lang (x=800)",
+      "id": "wall_back_hall", "label": "Tường sau — mặt hành lang (x=800)", "en": "back wall, hallway section",
       "from": [800, 300], "to": [800, 400], "faces": "main", "thickness": 10,
       "color": "#9DB4AA", "panel": null, "claddings": [], "mouldings": null
     },
     {
-      "id": "wall_hall_bar", "label": "Hành lang — vách phòng pha chế (z=300)",
+      "id": "wall_hall_bar", "label": "Hành lang — vách phòng pha chế (z=300)", "en": "hallway wall to the bar room",
       "from": [800, 300], "to": [950, 300], "faces": "hall", "thickness": 10,
       "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
     },
     {
-      "id": "wall_hall_outer", "label": "Hành lang — tường cửa ra vào (x=950)",
+      "id": "wall_hall_outer", "label": "Hành lang — tường cửa ra vào (x=950)", "en": "hallway wall with the entrance door",
       "from": [950, 300], "to": [950, 400], "faces": "hall", "thickness": 15,
       "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
     },
     {
-      "id": "wall_hall_side", "label": "Hành lang — tường ngoài (z=400)",
+      "id": "wall_hall_side", "label": "Hành lang — tường ngoài (z=400)", "en": "hallway outer wall",
       "from": [800, 400], "to": [950, 400], "faces": "hall", "thickness": 15,
       "color": "#E9E6DF", "panel": null, "claddings": [], "mouldings": null
     }
@@ -98,7 +98,7 @@
 
   "openings": [
     {
-      "id": "window_front", "label": "Cửa sổ kính kéo", "wall": "wall_window", "type": "window",
+      "id": "window_front", "label": "Cửa sổ kính kéo", "en": "sliding glass window (two aluminium units)", "wall": "wall_window", "type": "window",
       "u": [20, 380], "sill": 90, "height": 110,
       "frames": [
         { "u": [20, 195], "cols": 2, "rows": 1, "sliding": true },
@@ -107,41 +107,62 @@
       "todo": ["cao bậu (~90), chiều cao kính (~110), mép trái/phải và vách giữa 2 cụm"]
     },
     {
-      "id": "door_wc", "label": "Cửa WC", "wall": "wall_back_wc", "type": "door",
+      "id": "door_wc", "label": "Cửa WC", "en": "WC door (white, opens into the main room)", "wall": "wall_back_wc", "type": "door",
       "u": [15, 80], "sill": 0, "height": 200,
       "door": { "hinge": "end", "opensInto": "main", "color": "#F2EFE8" },
       "todo": ["bề rộng cửa (~65)", "bản lề phía nào — ảnh cho thấy cánh mở về phía phòng pha chế, brief ghi phía tường trên"]
     },
     {
-      "id": "passthrough_bar", "label": "Ô thông phòng pha chế (sẽ đập)", "wall": "wall_back_bar", "type": "passthrough",
+      "id": "passthrough_bar", "label": "Ô thông phòng pha chế (sẽ đập)", "en": "rectangular pass-through opening into the bar room, with a wooden ledge", "wall": "wall_back_bar", "type": "passthrough",
       "u": [30, 170], "sill": 90, "height": 100,
       "todo": ["vị trí, bề rộng, cao bậu, chiều cao ô"]
     },
     {
-      "id": "doorway_hall", "label": "Cửa thông hành lang", "wall": "wall_back_hall", "type": "door",
+      "id": "doorway_hall", "label": "Cửa thông hành lang", "en": "doorway to the entry hallway", "wall": "wall_back_hall", "type": "door",
       "u": [8, 93], "sill": 0, "height": 210,
       "door": { "hinge": "end", "opensInto": "hall", "color": "#E4DFD4" },
       "todo": ["bề rộng (~85)"]
     },
     {
-      "id": "door_bar", "label": "Cửa vào phòng pha chế", "wall": "wall_hall_bar", "type": "door",
+      "id": "door_bar", "label": "Cửa vào phòng pha chế", "en": "door into the bar room", "wall": "wall_hall_bar", "type": "door",
       "u": [40, 110], "sill": 0, "height": 200,
       "door": { "hinge": "start", "opensInto": "bar", "color": "#E4DFD4" },
       "todo": ["vị trí và bề rộng (~70)"]
     },
     {
-      "id": "door_entrance", "label": "Cửa ra vào", "wall": "wall_hall_outer", "type": "door",
+      "id": "door_entrance", "label": "Cửa ra vào", "en": "main entrance door", "wall": "wall_hall_outer", "type": "door",
       "u": [0, 100], "sill": 0, "height": 210,
       "door": { "hinge": "start", "opensInto": "hall", "color": "#6E4B33" }
     }
   ],
 
+  "views": [
+    { "id": "entrance", "label": "Từ cửa vào nhìn ra cửa sổ",
+      "description": "Standing at the entry doorway (back of the room), eye level 160 cm, looking toward the window wall.",
+      "position": [760, 160, 350], "target": [0, 120, 170] },
+    { "id": "window", "label": "Từ cửa sổ nhìn vào trong",
+      "description": "Standing by the window, eye level 160 cm, looking toward the back wall with the WC door, the bar pass-through and the entry doorway.",
+      "position": [60, 160, 200], "target": [800, 120, 200] },
+    { "id": "corner_window", "label": "Góc cửa sổ – phía lối vào, nhìn chéo",
+      "description": "High corner shot from the window / left-wall corner (220 cm), looking diagonally across the room toward the back right.",
+      "position": [40, 220, 380], "target": [600, 80, 60] },
+    { "id": "corner_back", "label": "Góc trong – phía WC, nhìn chéo ra cửa sổ",
+      "description": "High corner shot from the back / right-wall corner near the WC (220 cm), looking diagonally toward the window.",
+      "position": [690, 220, 25], "target": [100, 80, 330] },
+    { "id": "lounge_seated", "label": "Ngồi ở khu phòng khách (tầm mắt 110 cm)",
+      "description": "Seated eye level (110 cm) in the low lounge area near the window, looking toward the window and the right wall.",
+      "position": [300, 110, 320], "target": [0, 100, 120] },
+    { "id": "work_seated", "label": "Ngồi ở khu làm việc (tầm mắt 110 cm)",
+      "description": "Seated eye level (110 cm) in the work area, looking toward the back wall and the bar pass-through.",
+      "position": [520, 110, 70], "target": [800, 110, 260] }
+  ],
+
   "fixtures": [
-    { "id": "ac_window", "type": "ac_unit", "label": "Máy lạnh Daikin", "wall": "wall_window", "u": 150, "v": 228,
-      "size": { "w": 80, "h": 28, "d": 20 }, "color": "#EDE6CF", "todo": ["vị trí chính xác"] },
-    { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường phải (phía WC)", "wall": "wall_top", "u": 420, "v": 245,
+    { "id": "ac_window", "type": "ac_unit", "label": "Máy lạnh Daikin", "en": "cream-white wall-mounted air conditioner (split unit)", "wall": "wall_window", "u": 200, "v": 228,
+      "size": { "w": 120, "h": 28, "d": 20 }, "color": "#EDE6CF", "todo": ["vị trí chính xác"] },
+    { "id": "tube_top", "type": "tube_light", "label": "Đèn tuýp tường phải (phía WC)", "en": "bare fluorescent tube light near the ceiling", "wall": "wall_top", "u": 420, "v": 245,
       "size": { "w": 120, "h": 5, "d": 6 } },
-    { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường trái (phía lối vào)", "wall": "wall_bottom", "u": 420, "v": 245,
+    { "id": "tube_bottom", "type": "tube_light", "label": "Đèn tuýp tường trái (phía lối vào)", "en": "bare fluorescent tube light near the ceiling", "wall": "wall_bottom", "u": 420, "v": 245,
       "size": { "w": 120, "h": 5, "d": 6 } },
     { "id": "dl_1", "type": "downlight", "label": "Downlight", "x": 120, "z": 130, "size": { "w": 12, "h": 2, "d": 12 } },
     { "id": "dl_2", "type": "downlight", "label": "Downlight", "x": 120, "z": 270, "size": { "w": 12, "h": 2, "d": 12 } },

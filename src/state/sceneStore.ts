@@ -9,6 +9,7 @@
  */
 import type { Scene } from '../data/schema';
 import { parseScene, type Refs, type Result } from '../data/validate';
+import { fileStamp } from '../util/stamp';
 
 const STORAGE_KEY = 'junjay.scene.v1';
 const HASH_KEY = 's';
@@ -81,7 +82,7 @@ export function exportSceneFile(scene: Scene): void {
   const blob = new Blob([JSON.stringify(scene, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  const stamp = fileStamp();
   const slug = scene.name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')

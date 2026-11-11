@@ -21,6 +21,9 @@ interface Props {
   onImport: (file: File) => void;
   onShare: () => void;
   onReset: () => void;
+  onExportAi: () => void;
+  onSnapshot: () => void;
+  exporting: boolean;
 }
 
 export function Sidebar(props: Props) {
@@ -113,7 +116,7 @@ function SurfaceInspector({ room, panels, scene, selection, onScene, onClearSele
   );
 }
 
-function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShare, onReset }: Props) {
+function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, exporting }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const changedWalls = Object.keys(scene.room.walls).length;
@@ -155,6 +158,14 @@ function SceneInfo({ room, scene, saveState, onScene, onExport, onImport, onShar
           <button class="btn ghost" onClick={() => setConfirmReset(true)}>Đặt lại</button>
         )}
       </div>
+      <h3>Ảnh</h3>
+      <div class="btn-grid">
+        <button class="btn accent" onClick={onExportAi} disabled={exporting} title="Bộ ảnh các góc nhìn + prompt mô tả chi tiết, nén .zip">
+          {exporting ? 'Đang render…' : 'Xuất cho AI'}
+        </button>
+        <button class="btn" onClick={onSnapshot}>Chụp ảnh PNG</button>
+      </div>
+      <p class="hint">"Xuất cho AI" tải về .zip gồm mặt bằng + {room.views.length} góc nhìn và prompt.md để đưa vào Gemini.</p>
       <FixtureToggles room={room} scene={scene} onScene={onScene} />
       <input
         ref={fileRef}
