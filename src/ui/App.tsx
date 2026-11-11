@@ -25,6 +25,8 @@ export function App() {
     const viewer = new Viewer(hostRef.current);
     viewer.setRoom(state.data.room);
     viewerRef.current = viewer;
+    // Dev: điều khiển viewer từ console để kiểm tra góc nhìn.
+    if (import.meta.env.DEV) (window as unknown as { __viewer: Viewer }).__viewer = viewer;
     return () => {
       viewer.dispose();
       viewerRef.current = null;
@@ -36,6 +38,18 @@ export function App() {
     viewerRef.current?.setCameraMode(mode);
   };
 
+  const [cutaway, setCutaway] = useState(true);
+  const toggleCutaway = () => {
+    setCutaway(!cutaway);
+    viewerRef.current?.setCutaway(!cutaway);
+  };
+
+  const [ceiling, setCeiling] = useState(false);
+  const toggleCeiling = () => {
+    setCeiling(!ceiling);
+    viewerRef.current?.setCeilingVisible(!ceiling);
+  };
+
   return (
     <div class="app">
       <header class="topbar">
@@ -43,6 +57,10 @@ export function App() {
         <div class="seg" role="group" aria-label="Camera">
           <button aria-pressed={camera === 'orbit'} onClick={() => switchCamera('orbit')}>3D</button>
           <button aria-pressed={camera === 'top'} onClick={() => switchCamera('top')}>Mặt bằng</button>
+        </div>
+        <div class="seg">
+          <button aria-pressed={cutaway} onClick={toggleCutaway} title="Ẩn tường chắn tầm nhìn">Cắt tường</button>
+          <button aria-pressed={ceiling} onClick={toggleCeiling}>Trần</button>
         </div>
       </header>
       <main class="stage">

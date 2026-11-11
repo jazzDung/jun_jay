@@ -91,7 +91,7 @@ Trên Tab S9 có thể "Thêm vào màn hình chính" để mở như app.
 Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 
 - [x] Lát 1 — scaffold, schema dữ liệu, `room.json` / `catalog.json` theo hiện trạng, viewer thô (sàn + khối tường), camera 3D / mặt bằng
-- [ ] Lát 2 — dựng phòng đầy đủ: khoét ô cửa, cửa sổ, cánh cửa + vùng quét, phào chỉ, ốp PVC, trần thả, máy lạnh, đèn
+- [x] Lát 2 — dựng phòng đầy đủ: khoét ô cửa, cửa sổ, cánh cửa + vùng quét, phào chỉ, ốp PVC, trần thả, máy lạnh, đèn; tự ẩn tường chắn tầm nhìn
 - [ ] Lát 3 — chọn tường → đổi màu (wheel + hex), autosave, Export/Import JSON, Share link
 - [ ] Lát 4 — ốp lam sóng (texture từ ảnh thật, biên dạng 3D)
 - [ ] Lát 5 — Export for AI (bộ ảnh góc nhìn + prompt cho Gemini), deploy

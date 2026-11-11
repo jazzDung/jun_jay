@@ -1,11 +1,11 @@
 /**
- * Viewer tối thiểu cho lát 1: sàn từng zone, tường dạng khối thô (chưa khoét cửa),
- * camera orbit + top-down. Lát 2 sẽ thay buildRoughRoom() bằng bộ dựng phòng đầy đủ.
+ * Viewer real-time (giữ đơn giản, ảnh đẹp sẽ làm bằng path tracer riêng):
+ * phòng dựng từ room.json, camera orbit + top-down, bật/tắt trần.
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Room } from '../data/schema';
-import { cm } from './units';
+import { buildRoom, type RoomBuild } from './room/buildRoom';
 
 export type CameraMode = 'orbit' | 'top';
 
@@ -17,6 +17,11 @@ export class Viewer {
   private readonly controls: OrbitControls;
   private mode: CameraMode = 'orbit';
   private roomGroup = new THREE.Group();
+  private ceiling: THREE.Object3D | null = null;
+  private ceilingVisible = false;
+  private cutaway: RoomBuild['cutaway'] = [];
+  private cutawayEnabled = true;
+  private backdrop: THREE.Object3D | null = null;
   private bounds = new THREE.Box3();
   private readonly resizeObserver: ResizeObserver;
   private disposed = false;
@@ -29,10 +34,13 @@ export class Viewer {
     host.appendChild(this.renderer.domElement);
 
     this.scene.background = new THREE.Color('#1f1a17');
-    this.scene.add(new THREE.HemisphereLight('#fff6e8', '#5a4a3a', 1.4));
-    const sun = new THREE.DirectionalLight('#fff1dc', 1.2);
-    sun.position.set(-4, 6, 2);
-    this.scene.add(sun);
+    // Ánh sáng real-time đơn giản: trời + sàn hắt, một đèn chính từ trong phòng, một đèn phụ từ phía cửa sổ.
+    this.scene.add(new THREE.HemisphereLight('#fff8ee', '#bcae9c', 1.7));
+    const key = new THREE.DirectionalLight('#fff3e2', 0.9);
+    key.position.set(7, 9, 5);
+    const fill = new THREE.DirectionalLight('#eef4ff', 0.45);
+    fill.position.set(-3, 4, 1.5);
+    this.scene.add(key, fill);
     this.scene.add(this.roomGroup);
 
     this.persp = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
@@ -49,9 +57,14 @@ export class Viewer {
   setRoom(room: Room): void {
     this.scene.remove(this.roomGroup);
     disposeTree(this.roomGroup);
-    this.roomGroup = buildRoughRoom(room);
+    const built = buildRoom(room);
+    this.roomGroup = built.group;
+    this.ceiling = built.ceiling;
+    this.ceiling.visible = this.ceilingVisible;
+    this.cutaway = built.cutaway;
+    this.backdrop = built.backdrop;
     this.scene.add(this.roomGroup);
-    this.bounds.setFromObject(this.roomGroup);
+    this.bounds.copy(built.bounds);
     this.setCameraMode(this.mode, true);
   }
 
@@ -70,14 +83,35 @@ export class Viewer {
       this.fitOrtho(size);
     } else {
       if (reset || changed) {
-        // Đứng ngoài góc tường dưới – cửa sổ, nhìn chéo vào trong quán.
-        this.persp.position.set(center.x - size.x * 0.65, size.y * 2.6, center.z + size.z * 1.6);
-        this.controls.target.set(center.x, 0.8, center.z);
+        // Từ phía tường dưới, lệch về cửa sổ, nhìn chéo xuống — khung vừa toàn bộ phòng.
+        const radius = size.length() / 2;
+        const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.persp.fov / 2)) * 0.8;
+        const dir = new THREE.Vector3(-0.45, 0.85, 0.75).normalize();
+        this.controls.target.set(center.x, 0.6, center.z);
+        this.persp.position.copy(this.controls.target).addScaledVector(dir, dist);
       }
       this.controls.object = this.persp;
       this.controls.enableRotate = true;
     }
     this.controls.update();
+  }
+
+  /** Đặt camera 3D (m) — dùng cho preset góc nhìn và kiểm tra. */
+  lookFrom(position: [number, number, number], target: [number, number, number]): void {
+    if (this.mode !== 'orbit') this.setCameraMode('orbit');
+    this.persp.position.set(...position);
+    this.controls.target.set(...target);
+    this.controls.update();
+  }
+
+  /** Ẩn tường nằm giữa camera và phòng (chỉ ở chế độ 3D). */
+  setCutaway(enabled: boolean): void {
+    this.cutawayEnabled = enabled;
+  }
+
+  setCeilingVisible(visible: boolean): void {
+    this.ceilingVisible = visible;
+    if (this.ceiling) this.ceiling.visible = visible;
   }
 
   /** Chụp khung hình hiện tại ra PNG (dùng cho Export for AI ở lát sau). */
@@ -94,6 +128,22 @@ export class Viewer {
     disposeTree(this.roomGroup);
     this.renderer.dispose();
     this.renderer.domElement.remove();
+  }
+
+  private readonly tmp = new THREE.Vector3();
+  private updateCutaway(): void {
+    const active = this.cutawayEnabled && this.mode === 'orbit';
+    const cam = this.persp.position;
+    for (const w of this.cutaway) {
+      // camera ở phía sau mặt trong của tường (cách > 30 cm) → tường đang chắn
+      const behind = this.tmp.copy(cam).sub(w.mid).dot(w.normal) < -0.3;
+      w.group.visible = !(active && behind);
+    }
+    // phông ngoài cửa sổ chỉ hiện khi camera đã xuống dưới trần (đang ở trong phòng)
+    const inside = this.mode === 'orbit' && cam.y < this.bounds.max.y;
+    if (this.backdrop) this.backdrop.visible = inside;
+    // trần: luôn hiện nếu bật nút "Trần", ngoài ra tự hiện khi camera ở trong phòng
+    if (this.ceiling) this.ceiling.visible = this.ceilingVisible || inside;
   }
 
   private activeCamera(): THREE.Camera {
@@ -124,50 +174,9 @@ export class Viewer {
   private frame(): void {
     if (this.disposed) return;
     this.controls.update();
+    this.updateCutaway();
     this.renderer.render(this.scene, this.activeCamera());
   }
-}
-
-function buildRoughRoom(room: Room): THREE.Group {
-  const group = new THREE.Group();
-  group.name = 'room';
-
-  for (const zone of room.zones) {
-    const [x0, z0, x1, z1] = zone.rect;
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(cm(x1 - x0), cm(z1 - z0)),
-      new THREE.MeshStandardMaterial({ color: zone.floor.color, roughness: 0.85 }),
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(cm((x0 + x1) / 2), 0, cm((z0 + z1) / 2));
-    floor.name = `floor:${zone.id}`;
-    group.add(floor);
-  }
-
-  const h = cm(room.ceilingHeight);
-  for (const wall of room.walls) {
-    const [ax, az] = wall.from;
-    const [bx, bz] = wall.to;
-    const len = Math.hypot(bx - ax, bz - az);
-    const geo = new THREE.BoxGeometry(cm(len), h, cm(wall.thickness));
-    const mesh = new THREE.Mesh(
-      geo,
-      new THREE.MeshStandardMaterial({ color: wall.color, roughness: 0.9, transparent: true, opacity: 0.85 }),
-    );
-    mesh.position.set(cm((ax + bx) / 2), h / 2, cm((az + bz) / 2));
-    mesh.rotation.y = -Math.atan2(bz - az, bx - ax);
-    mesh.name = `wall:${wall.id}`;
-    group.add(mesh);
-  }
-
-  // Lưới 50 cm trên sàn để kiểm tra tỉ lệ.
-  const box = new THREE.Box3().setFromObject(group);
-  const size = box.getSize(new THREE.Vector3());
-  const span = Math.ceil(Math.max(size.x, size.z) / 0.5) * 0.5;
-  const grid = new THREE.GridHelper(span, span / 0.5, '#6b5a4a', '#3a302a');
-  grid.position.set(span / 2, 0.002, span / 2);
-  group.add(grid);
-  return group;
 }
 
 function disposeTree(obj: THREE.Object3D): void {
