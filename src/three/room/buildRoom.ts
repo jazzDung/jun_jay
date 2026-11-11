@@ -19,7 +19,7 @@ import {
   pvcTexture,
   repeatFor,
   tileTexture,
-  vinylOakTexture,
+  woodOakTexture,
 } from './textures';
 import { WallFrame } from './wallFrame';
 
@@ -34,11 +34,27 @@ const COLORS = {
 
 const EPS = 0.0015; // m — tách lớp phủ khỏi mặt tường để tránh z-fighting
 
+/** Đối tượng chọn được bằng chạm/click (gắn vào mesh qua userData.pick). */
+export type PickTarget = { kind: 'wall'; id: string } | { kind: 'ceiling' };
+
+export interface WallSurface {
+  group: THREE.Object3D;
+  /** Vật liệu mặt tường. */
+  surface: THREE.MeshStandardMaterial;
+  /** Vật liệu đổi màu theo tường (phào chỉ khi `mouldings.color` = null). */
+  followers: THREE.MeshStandardMaterial[];
+  mouldings: THREE.Object3D | null;
+  baseColor: string;
+  baseMouldings: boolean;
+}
+
 export interface RoomBuild {
   group: THREE.Group;
   ceiling: THREE.Group;
-  /** Mesh mặt tường theo id — để đổi màu / chọn ở lát 3. */
-  wallMeshes: Map<string, THREE.Mesh>;
+  /** Bề mặt đổi được màu, theo id tường. */
+  walls: Map<string, WallSurface>;
+  /** Trần của khu chính (zone đầu tiên trong room.json). Sàn gỗ giữ nguyên, không chọn được. */
+  ceilingSurface: { mesh: THREE.Mesh; mat: THREE.MeshStandardMaterial; baseColor: string };
   /** Thông tin để ẩn tường đứng chắn giữa camera và phòng. */
   cutaway: { group: THREE.Object3D; mid: THREE.Vector3; normal: THREE.Vector3 }[];
   /** Phông nền ngoài cửa sổ — chỉ nên hiện khi camera ở trong phòng. */
@@ -53,11 +69,12 @@ export function buildRoom(room: Room): RoomBuild {
   const zones = new Map(room.zones.map((z) => [z.id, z]));
   const H = cm(room.ceilingHeight);
 
+  const mainZone = room.zones[0];
   const floors = named('floors');
   for (const zone of room.zones) floors.add(buildFloor(zone));
 
   const walls = named('walls');
-  const wallMeshes = new Map<string, THREE.Mesh>();
+  const wallSurfaces = new Map<string, WallSurface>();
   const frames = room.walls.map((w) => new WallFrame(w, room, zones));
   const cutaway: RoomBuild['cutaway'] = [];
   for (const frame of frames) {
@@ -65,7 +82,6 @@ export function buildRoom(room: Room): RoomBuild {
     const fixtures = room.fixtures.filter((f) => f.wall === frame.wall.id);
     const g = frame.makeGroup(`wall:${frame.wall.id}`);
     const surface = buildWallBody(frame, openings);
-    wallMeshes.set(frame.wall.id, surface);
     g.add(surface);
 
     const back = backSideZone(frame, room);
@@ -73,7 +89,14 @@ export function buildRoom(room: Room): RoomBuild {
 
     for (const o of openings) g.add(buildOpening(frame, o));
     for (const c of frame.wall.claddings) g.add(buildCladding(frame, c));
-    if (frame.wall.mouldings?.enabled) g.add(buildMouldings(frame, openings));
+    const m = frame.wall.mouldings;
+    const mouldingMat = std(m?.color ?? frame.wall.color, { roughness: 0.8 });
+    let mouldings: THREE.Object3D | null = null;
+    if (m) {
+      mouldings = buildMouldings(frame, openings, mouldingMat);
+      mouldings.visible = m.enabled;
+      g.add(mouldings);
+    }
     for (const f of fixtures) {
       const x = frame.uToX(f.u ?? 0);
       const mesh = buildFixtureMesh(f.type, f.size, f.color);
@@ -82,6 +105,16 @@ export function buildRoom(room: Room): RoomBuild {
       g.add(mesh);
     }
     walls.add(g);
+    const pick: PickTarget = { kind: 'wall', id: frame.wall.id };
+    g.traverse((o) => (o.userData.pick = pick));
+    wallSurfaces.set(frame.wall.id, {
+      group: g,
+      surface: surface.material as THREE.MeshStandardMaterial,
+      followers: m && m.color === null ? [mouldingMat] : [],
+      mouldings,
+      baseColor: frame.wall.color,
+      baseMouldings: m?.enabled ?? false,
+    });
     const [ax, az] = frame.wall.from;
     const [bx, bz] = frame.wall.to;
     cutaway.push({ group: g, mid: new THREE.Vector3(cm((ax + bx) / 2), 0, cm((az + bz) / 2)), normal: frame.normal });
@@ -93,7 +126,9 @@ export function buildRoom(room: Room): RoomBuild {
   }
 
   const ceiling = named('ceiling');
-  for (const zone of room.zones) ceiling.add(buildCeiling(zone, room, H));
+  for (const zone of room.zones) ceiling.add(buildCeiling(zone, room, H, zone === mainZone));
+  const ceilingMesh = ceiling.getObjectByName(`ceiling:${mainZone.id}`) as THREE.Mesh;
+  ceilingMesh.userData.pick = { kind: 'ceiling' } satisfies PickTarget;
   for (const f of room.fixtures) {
     if (f.wall !== undefined) continue;
     const mesh = buildFixtureMesh(f.type, f.size, f.color);
@@ -106,7 +141,15 @@ export function buildRoom(room: Room): RoomBuild {
   bounds.max.y = H;
   const backdrop = buildBackdrop(room, frames);
   group.add(floors, walls, innerWalls, ceiling, backdrop);
-  return { group, ceiling, wallMeshes, cutaway, backdrop, bounds };
+  return {
+    group,
+    ceiling,
+    walls: wallSurfaces,
+    ceilingSurface: { mesh: ceilingMesh, mat: ceilingMesh.material as THREE.MeshStandardMaterial, baseColor: room.ceiling.color },
+    cutaway,
+    backdrop,
+    bounds,
+  };
 }
 
 // ------------------------------------------------------------------ helpers
@@ -134,7 +177,7 @@ function buildFloor(zone: Zone): THREE.Mesh {
   const w = cm(x1 - x0);
   const d = cm(z1 - z0);
   const mat = std('#ffffff', { roughness: 0.7 });
-  if (zone.floor.material.startsWith('vinyl')) mat.map = repeatFor(vinylOakTexture(), w, d);
+  if (zone.floor.material.startsWith('wood')) mat.map = repeatFor(woodOakTexture(), w, d);
   else if (zone.floor.material.startsWith('tile')) mat.map = repeatFor(tileTexture(zone.floor.color), w, d);
   else mat.color.set(zone.floor.color);
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
@@ -338,10 +381,9 @@ function overlaps(a0: number, a1: number, b0: number, b1: number): boolean {
   return a0 < b1 && b0 < a1;
 }
 
-function buildMouldings(frame: WallFrame, openings: Opening[]): THREE.Group {
+function buildMouldings(frame: WallFrame, openings: Opening[], mat: THREE.Material): THREE.Group {
   const m = frame.wall.mouldings!;
   const g = named('mouldings');
-  const mat = std(m.color ?? frame.wall.color, { roughness: 0.8 });
   const [ua, ub] = frame.rangeToX(m.uRange);
   const gap = cm(m.gap);
   const pw = cm(m.profileWidth);
@@ -464,13 +506,13 @@ function buildInnerWalls(zone: Zone, room: Room, H: number): THREE.Mesh[] {
   return meshes;
 }
 
-function buildCeiling(zone: Zone, room: Room, H: number): THREE.Mesh {
+function buildCeiling(zone: Zone, room: Room, H: number, isMain: boolean): THREE.Mesh {
   const [x0, z0, x1, z1] = zone.rect;
   const w = cm(x1 - x0);
   const d = cm(z1 - z0);
   // Mặt trần quay xuống chỉ nhận ánh sáng hắt từ sàn → tự phát sáng nhẹ để không ngả nâu.
   const mat = std('#ffffff', { roughness: 0.9, side: THREE.DoubleSide, emissive: '#ffffff', emissiveIntensity: 0.45 });
-  if (zone.id === 'main' && room.ceiling.type === 'drop_tile') {
+  if (isMain && room.ceiling.type === 'drop_tile') {
     mat.map = repeatFor(dropCeilingTexture(room.ceiling.color, cm(room.ceiling.tile ?? 60)), w, d);
     mat.emissiveMap = mat.map;
   } else {
@@ -497,6 +539,7 @@ function buildBackdrop(room: Room, frames: WallFrame[]): THREE.Group {
       new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }),
     );
     plane.position.set(frame.length / 2, 1.6, -1.5);
+    plane.name = 'backdrop';
     holder.add(plane);
     g.add(holder);
   }

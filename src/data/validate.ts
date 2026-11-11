@@ -94,18 +94,42 @@ export function validateBundle(raw: { room: unknown; catalog: unknown; scene: un
   errors.push(...roomCheck.errors);
   const warnings = [...roomCheck.warnings];
 
-  const catalogIds = new Set(catalog.data.items.map((i) => i.id));
   for (const d of duplicates(catalog.data.items.map((i) => i.id))) errors.push(`catalog.json: id "${d}" bị trùng`);
 
-  const wallIds = new Set(room.data.walls.map((w) => w.id));
-  for (const p of scene.data.items) {
-    if (!catalogIds.has(p.catalogId)) errors.push(`scene.json: "${p.uid}" dùng catalogId không tồn tại "${p.catalogId}"`);
-    if ('wall' in p && !wallIds.has(p.wall)) errors.push(`scene.json: "${p.uid}" treo lên tường không tồn tại "${p.wall}"`);
-  }
-  for (const id of Object.keys(scene.data.room.walls)) {
-    if (!wallIds.has(id)) warnings.push(`scene.json: ghi đè cho tường không tồn tại "${id}" (bỏ qua)`);
-  }
+  const sceneCheck = checkSceneRefs(scene.data, room.data, catalog.data, 'scene.json');
+  errors.push(...sceneCheck.errors);
+  warnings.push(...sceneCheck.warnings);
 
   if (errors.length) return { ok: false, errors };
   return { ok: true, data: { room: room.data, catalog: catalog.data, scene: scene.data }, warnings };
+}
+
+/** Ràng buộc chéo của một cảnh với phòng + catalog hiện tại. */
+export function checkSceneRefs(
+  scene: Scene,
+  room: Room,
+  catalog: Catalog,
+  file: string,
+): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const catalogIds = new Set(catalog.items.map((i) => i.id));
+  const wallIds = new Set(room.walls.map((w) => w.id));
+  for (const p of scene.items) {
+    if (!catalogIds.has(p.catalogId)) errors.push(`${file}: "${p.uid}" dùng catalogId không tồn tại "${p.catalogId}"`);
+    if ('wall' in p && !wallIds.has(p.wall)) errors.push(`${file}: "${p.uid}" treo lên tường không tồn tại "${p.wall}"`);
+  }
+  for (const id of Object.keys(scene.room.walls)) {
+    if (!wallIds.has(id)) warnings.push(`${file}: ghi đè cho tường không tồn tại "${id}" (bỏ qua)`);
+  }
+  return { errors, warnings };
+}
+
+/** Parse + kiểm tra một cảnh lấy từ autosave / file Import / Share link. */
+export function parseScene(raw: unknown, room: Room, catalog: Catalog, file: string): Result<Scene> {
+  const parsed = Scene.safeParse(raw);
+  if (!parsed.success) return { ok: false, errors: formatZod(file, parsed.error) };
+  const check = checkSceneRefs(parsed.data, room, catalog, file);
+  if (check.errors.length) return { ok: false, errors: check.errors };
+  return { ok: true, data: parsed.data, warnings: check.warnings };
 }

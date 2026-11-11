@@ -1,5 +1,5 @@
 /**
- * Texture sinh bằng canvas cho các bề mặt có sẵn của phòng (sàn vinyl, ốp PVC, trần thả).
+ * Texture sinh bằng canvas cho các bề mặt có sẵn của phòng (sàn gỗ, ốp PVC, trần thả).
  * Mỗi texture mô tả MỘT chu kỳ có kích thước thật `period` (m); mesh tự set repeat
  * theo kích thước của nó bằng `repeatFor()`.
  */
@@ -43,35 +43,50 @@ function cached(key: string, make: () => PeriodicTexture): PeriodicTexture {
   return t;
 }
 
-/** Sàn vinyl vân sồi: ván 18 × 120 cm chạy theo trục u của texture, mối nối so le. */
-export function vinylOakTexture(): PeriodicTexture {
-  return cached('vinyl_oak', () => {
+/**
+ * Sàn gỗ sồi sáng hiện trạng (theo ảnh ref/space): tông be ấm ngả mật ong, ván ~15 cm
+ * chạy dọc trục u của texture (= trục x của quán), mối nối đầu ván so le, vân dọc rõ.
+ */
+export function woodOakTexture(): PeriodicTexture {
+  return cached('wood_oak', () => {
     const [c, g] = makeCanvas(1024, 1024); // = 1.2 m × 1.2 m
-    const rand = rng(7);
-    const rows = 7; // ~17 cm/ván để 7 ván vừa 1.2 m
+    const rand = rng(11);
+    const rows = 8; // 15 cm/ván
     const rowH = c.height / rows;
     for (let r = 0; r < rows; r++) {
-      const offset = rand() * c.width;
-      for (let k = -1; k < 2; k++) {
-        const x0 = offset + k * c.width;
-        const tone = 0.965 + rand() * 0.05;
-        g.fillStyle = `rgb(${Math.round(206 * tone)}, ${Math.round(197 * tone)}, ${Math.round(184 * tone)})`;
-        g.fillRect(x0, r * rowH, c.width, rowH);
-        // vân gỗ: các đường dài mảnh
-        for (let i = 0; i < 26; i++) {
-          const y = r * rowH + rand() * rowH;
-          g.strokeStyle = `rgba(120, 104, 88, ${0.03 + rand() * 0.06})`;
-          g.lineWidth = 0.6 + rand() * 1.4;
+      const y0 = r * rowH;
+      const joint = rand() * c.width;
+      // mỗi hàng: 2 đoạn ván nối tại `joint`, màu hơi khác nhau
+      for (const [xa, xb] of [[0, joint], [joint, c.width]] as const) {
+        const tone = 0.975 + rand() * 0.04;
+        const warm = rand() * 6 - 2; // lệch nhẹ ngả mật ong / ngả xám
+        g.fillStyle = `rgb(${Math.round((216 + warm) * tone)}, ${Math.round(200 * tone)}, ${Math.round((178 - warm) * tone)})`;
+        g.fillRect(xa, y0, xb - xa, rowH);
+        g.save();
+        g.beginPath();
+        g.rect(xa, y0, xb - xa, rowH);
+        g.clip();
+        // vân gỗ: đường dài mảnh, lượn nhẹ — sẫm ngả mật ong và sáng xen kẽ
+        for (let i = 0; i < 34; i++) {
+          const y = y0 + rand() * rowH;
+          const dark = rand() < 0.7;
+          g.strokeStyle = dark
+            ? `rgba(160, 128, 92, ${0.06 + rand() * 0.12})`
+            : `rgba(246, 236, 220, ${0.1 + rand() * 0.15})`;
+          g.lineWidth = 0.5 + rand() * (dark ? 1.8 : 2.6);
+          const phase = rand() * 10;
+          const amp = 1 + rand() * 3;
           g.beginPath();
-          g.moveTo(x0, y);
-          for (let x = 0; x <= c.width; x += 64) g.lineTo(x0 + x, y + Math.sin(x / 90 + i) * 2.5);
+          g.moveTo(xa, y);
+          for (let x = xa; x <= xb + 32; x += 32) g.lineTo(x, y + Math.sin(x / 110 + phase) * amp);
           g.stroke();
         }
-        g.fillStyle = 'rgba(90, 78, 66, 0.55)';
-        g.fillRect(x0, r * rowH, 2, rowH); // mối nối đầu ván
+        g.restore();
       }
-      g.fillStyle = 'rgba(90, 78, 66, 0.45)';
-      g.fillRect(0, r * rowH, c.width, 2); // khe dọc ván
+      g.fillStyle = 'rgba(120, 100, 80, 0.45)';
+      g.fillRect(joint, y0, 2, rowH); // mối nối đầu ván
+      g.fillStyle = 'rgba(120, 100, 80, 0.35)';
+      g.fillRect(0, y0, c.width, 2); // khe dọc giữa các ván
     }
     return finish(c, [1.2, 1.2]);
   });

@@ -1,28 +1,39 @@
 /**
  * Viewer real-time (giữ đơn giản, ảnh đẹp sẽ làm bằng path tracer riêng):
- * phòng dựng từ room.json, camera orbit + top-down, bật/tắt trần.
+ * phòng dựng từ room.json, áp màu/ghi đè từ scene, chọn bề mặt bằng chạm/click,
+ * camera orbit + top-down, tự ẩn tường chắn, bật/tắt trần.
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { Room } from '../data/schema';
-import { buildRoom, type RoomBuild } from './room/buildRoom';
+import type { Room, Scene } from '../data/schema';
+import { buildRoom, type PickTarget, type RoomBuild } from './room/buildRoom';
 
 export type CameraMode = 'orbit' | 'top';
+export type { PickTarget };
+
+const SELECT_COLOR = '#E07A2F';
+/** Chạm/click được tính là "chọn" nếu con trỏ di chuyển ít hơn ngần này (px) — còn lại là xoay camera. */
+const TAP_SLOP = 6;
 
 export class Viewer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
+  /** Gọi khi người dùng chạm/click chọn (null = chạm vào chỗ trống). */
+  onPick: (target: PickTarget | null) => void = () => {};
+
   private readonly persp: THREE.PerspectiveCamera;
   private readonly ortho: THREE.OrthographicCamera;
   private readonly controls: OrbitControls;
   private mode: CameraMode = 'orbit';
+  private built: RoomBuild | null = null;
   private roomGroup = new THREE.Group();
-  private ceiling: THREE.Object3D | null = null;
   private ceilingVisible = false;
-  private cutaway: RoomBuild['cutaway'] = [];
   private cutawayEnabled = true;
-  private backdrop: THREE.Object3D | null = null;
   private bounds = new THREE.Box3();
+  private selection: PickTarget | null = null;
+  private readonly selectionBox = new THREE.Box3Helper(new THREE.Box3(), SELECT_COLOR);
+  private readonly raycaster = new THREE.Raycaster();
+  private pointerDown: { x: number; y: number; id: number } | null = null;
   private readonly resizeObserver: ResizeObserver;
   private disposed = false;
 
@@ -40,13 +51,23 @@ export class Viewer {
     key.position.set(7, 9, 5);
     const fill = new THREE.DirectionalLight('#eef4ff', 0.45);
     fill.position.set(-3, 4, 1.5);
-    this.scene.add(key, fill);
-    this.scene.add(this.roomGroup);
+    this.scene.add(key, fill, this.roomGroup);
+
+    const boxMat = this.selectionBox.material as THREE.LineBasicMaterial;
+    boxMat.depthTest = false;
+    boxMat.transparent = true;
+    this.selectionBox.renderOrder = 10;
+    this.selectionBox.visible = false;
+    this.scene.add(this.selectionBox);
 
     this.persp = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
     this.ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 100);
     this.controls = new OrbitControls(this.persp, this.renderer.domElement);
     this.controls.enableDamping = true;
+
+    const canvas = this.renderer.domElement;
+    canvas.addEventListener('pointerdown', this.handlePointerDown);
+    canvas.addEventListener('pointerup', this.handlePointerUp);
 
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(host);
@@ -57,15 +78,35 @@ export class Viewer {
   setRoom(room: Room): void {
     this.scene.remove(this.roomGroup);
     disposeTree(this.roomGroup);
-    const built = buildRoom(room);
-    this.roomGroup = built.group;
-    this.ceiling = built.ceiling;
-    this.ceiling.visible = this.ceilingVisible;
-    this.cutaway = built.cutaway;
-    this.backdrop = built.backdrop;
+    this.built = buildRoom(room);
+    this.roomGroup = this.built.group;
     this.scene.add(this.roomGroup);
-    this.bounds.copy(built.bounds);
+    this.bounds.copy(this.built.bounds);
     this.setCameraMode(this.mode, true);
+  }
+
+  /** Áp các ghi đè của cảnh (màu tường, phào chỉ, màu trần) lên phòng đã dựng — không dựng lại. */
+  applyScene(scene: Scene): void {
+    const b = this.built;
+    if (!b) return;
+    for (const [id, w] of b.walls) {
+      const o = scene.room.walls[id];
+      const color = o?.color ?? w.baseColor;
+      w.surface.color.set(color);
+      for (const f of w.followers) f.color.set(color);
+      if (w.mouldings) w.mouldings.visible = o?.mouldings ?? w.baseMouldings;
+    }
+    const ce = b.ceilingSurface;
+    const ceilingColor = scene.room.ceilingColor;
+    // trần có texture lưới: nhân màu vào texture (trắng = giữ nguyên)
+    ce.mat.color.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
+    ce.mat.emissive.set(ceilingColor ?? (ce.mat.map ? '#ffffff' : ce.baseColor));
+    this.updateSelectionBox();
+  }
+
+  setSelection(target: PickTarget | null): void {
+    this.selection = target;
+    this.updateSelectionBox();
   }
 
   setCameraMode(mode: CameraMode, reset = false): void {
@@ -85,7 +126,7 @@ export class Viewer {
       if (reset || changed) {
         // Từ phía tường dưới, lệch về cửa sổ, nhìn chéo xuống — khung vừa toàn bộ phòng.
         const radius = size.length() / 2;
-        const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.persp.fov / 2)) * 0.8;
+        const dist = (radius / Math.sin(THREE.MathUtils.degToRad(this.persp.fov / 2))) * 0.8;
         const dir = new THREE.Vector3(-0.45, 0.85, 0.75).normalize();
         this.controls.target.set(center.x, 0.6, center.z);
         this.persp.position.copy(this.controls.target).addScaledVector(dir, dist);
@@ -111,7 +152,6 @@ export class Viewer {
 
   setCeilingVisible(visible: boolean): void {
     this.ceilingVisible = visible;
-    if (this.ceiling) this.ceiling.visible = visible;
   }
 
   /** Chụp khung hình hiện tại ra PNG (dùng cho Export for AI ở lát sau). */
@@ -124,26 +164,79 @@ export class Viewer {
     this.disposed = true;
     this.renderer.setAnimationLoop(null);
     this.resizeObserver.disconnect();
+    const canvas = this.renderer.domElement;
+    canvas.removeEventListener('pointerdown', this.handlePointerDown);
+    canvas.removeEventListener('pointerup', this.handlePointerUp);
     this.controls.dispose();
     disposeTree(this.roomGroup);
     this.renderer.dispose();
-    this.renderer.domElement.remove();
+    canvas.remove();
   }
 
+  // ------------------------------------------------------------- picking
+
+  private readonly handlePointerDown = (e: PointerEvent) => {
+    if (!e.isPrimary) return;
+    this.pointerDown = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  };
+
+  private readonly handlePointerUp = (e: PointerEvent) => {
+    const start = this.pointerDown;
+    this.pointerDown = null;
+    if (!start || start.id !== e.pointerId) return;
+    if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) return; // đang kéo xoay camera
+    this.onPick(this.pick(e.clientX, e.clientY));
+  };
+
+  private pick(clientX: number, clientY: number): PickTarget | null {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(ndc, this.activeCamera());
+    for (const hit of this.raycaster.intersectObject(this.roomGroup, true)) {
+      if (!isVisible(hit.object)) continue; // tường đang bị cắt, trần đang ẩn…
+      const target = hit.object.userData.pick as PickTarget | undefined;
+      if (target) return target;
+      // chạm vào vật không chọn được (kính, phông nền) → xét vật phía sau
+      if (hit.object.name.startsWith('backdrop') || isGlass(hit.object)) continue;
+      return null;
+    }
+    return null;
+  }
+
+  private selectionObject(): THREE.Object3D | null {
+    const b = this.built;
+    const s = this.selection;
+    if (!b || !s) return null;
+    if (s.kind === 'wall') return b.walls.get(s.id)?.group.getObjectByName(`wallSurface:${s.id}`) ?? null;
+    return b.ceilingSurface.mesh;
+  }
+
+  private updateSelectionBox(): void {
+    const obj = this.selectionObject();
+    this.selectionBox.visible = !!obj;
+    if (obj) this.selectionBox.box.setFromObject(obj);
+  }
+
+  // ------------------------------------------------------------- frame
+
   private readonly tmp = new THREE.Vector3();
-  private updateCutaway(): void {
+  private updateVisibility(): void {
+    const b = this.built;
+    if (!b) return;
     const active = this.cutawayEnabled && this.mode === 'orbit';
     const cam = this.persp.position;
-    for (const w of this.cutaway) {
+    for (const w of b.cutaway) {
       // camera ở phía sau mặt trong của tường (cách > 30 cm) → tường đang chắn
       const behind = this.tmp.copy(cam).sub(w.mid).dot(w.normal) < -0.3;
       w.group.visible = !(active && behind);
     }
     // phông ngoài cửa sổ chỉ hiện khi camera đã xuống dưới trần (đang ở trong phòng)
     const inside = this.mode === 'orbit' && cam.y < this.bounds.max.y;
-    if (this.backdrop) this.backdrop.visible = inside;
-    // trần: luôn hiện nếu bật nút "Trần", ngoài ra tự hiện khi camera ở trong phòng
-    if (this.ceiling) this.ceiling.visible = this.ceilingVisible || inside;
+    b.backdrop.visible = inside;
+    // trần: luôn hiện nếu bật nút "Trần" hoặc đang chọn trần; ngoài ra tự hiện khi camera ở trong phòng
+    b.ceiling.visible = this.ceilingVisible || inside || this.selection?.kind === 'ceiling';
+    const sel = this.selectionObject();
+    this.selectionBox.visible = !!sel && isVisible(sel);
   }
 
   private activeCamera(): THREE.Camera {
@@ -174,9 +267,19 @@ export class Viewer {
   private frame(): void {
     if (this.disposed) return;
     this.controls.update();
-    this.updateCutaway();
+    this.updateVisibility();
     this.renderer.render(this.scene, this.activeCamera());
   }
+}
+
+function isVisible(obj: THREE.Object3D): boolean {
+  for (let o: THREE.Object3D | null = obj; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
+function isGlass(obj: THREE.Object3D): boolean {
+  const mat = (obj as THREE.Mesh).material as THREE.Material | undefined;
+  return !!mat && !Array.isArray(mat) && mat.transparent && mat.opacity < 0.5;
 }
 
 function disposeTree(obj: THREE.Object3D): void {

@@ -10,7 +10,7 @@
 
   "zones": [
     { "id": "main", "label": "Không gian chính", "rect": [0, 0, 800, 400],
-      "floor": { "color": "#CBC3B6", "material": "vinyl_oak_x" } },
+      "floor": { "color": "#D6C6AE", "material": "wood_oak_x" } },
     { "id": "wc", "label": "WC", "rect": [800, 0, 950, 100],
       "floor": { "color": "#D6CCB4", "material": "tile_30" }, "interiorWallColor": "#EDEBE4" },
     { "id": "bar", "label": "Phòng pha chế", "rect": [800, 100, 950, 300],

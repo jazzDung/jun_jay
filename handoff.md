@@ -63,7 +63,7 @@ z=400 └────────────────────┴──�
   - Hai mảng tường bên ngay cạnh cửa sổ (đầu tường trên/dưới, sâu ~50 **(TODO)**) ốp **PVC trắng sọc ngang**.
 - **Trần:** trần thả tấm **60 × 60**, 3 hàng đèn downlight âm trần, đèn tuýp chạy dọc 2 tường dài sát trần. Gần cửa sổ có dầm/bậc trần **(TODO đo)**. Chiều cao trần 260 **(TODO đo, khoảng 250–280)**. Trần thấp là một ràng buộc thiết kế quan trọng.
 - **Tường hiện tại:** xanh xám ngả sage, mặc định `#9DB4AA` **(TODO lấy mã thật)**. Tường trên, tường dưới, tường sau đều có **phào chỉ khung tranh** (hàng ô lớn phía trên, hàng ô thấp phía dưới, chân tường ~10). Dựng phào dưới dạng dữ liệu cho từng tường, có thể ẩn khi ốp pano.
-- **Sàn:** vinyl vân sồi xám-be, ván chạy dọc theo trục x.
+- **Sàn:** sàn gỗ sồi sáng, tông be ấm ngả mật ong, ván hẹp (~15) chạy dọc theo trục x. **Giữ nguyên, không đổi** (app không cho đổi màu sàn).
 - Ổ điện / công tắc: thấy trong ảnh ở chân tường trên, tường dưới, tường sau **(TODO vị trí chính xác)** — đặt như đồ treo tường.
 
 ### Các mảng tường (wall surfaces) cần chọn được riêng
@@ -76,7 +76,7 @@ z=400 └────────────────────┴──�
 | `wall_back_wc` | Mặt x=800 của WC (trừ ô cửa) | 100 × trần |
 | `wall_back_bar` | Mặt x=800 của phòng pha chế (trừ ô thông chữ nhật) | 200 × trần |
 | `ceiling` | Trần (cho phép đổi màu) | — |
-| `floor` | Sàn (chọn màu/vật liệu đơn giản) | — |
+| `floor` | Sàn gỗ hiện trạng — **giữ nguyên, không đổi** | — |
 
 WC, phòng pha chế và lối vào chỉ cần dựng khối + ô cửa (không cần nội thất bên trong ở v1).
 

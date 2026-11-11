@@ -255,7 +255,7 @@ export const Scene = z.object({
     .object({
       walls: z.record(z.string(), WallOverride).default({}),
       ceilingColor: Hex.optional(),
-      floorColor: Hex.optional(),
+      // Sàn gỗ hiện trạng giữ nguyên — không có ghi đè màu sàn.
     })
     .default({ walls: {} }),
   items: z.array(Placement).default([]),

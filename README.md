@@ -71,6 +71,14 @@ Thêm một object vào `items` trong `public/data/catalog.json` — **không c�
 
 Sau đó chạy `npm run validate-data`.
 
+## Lưu cảnh
+
+- **Tự lưu** vào trình duyệt của từng thiết bị (Tab và Mac lưu riêng).
+- **Xuất JSON / Nhập JSON**: chuyển cảnh giữa các thiết bị hoặc giữ nhiều phương án.
+- **Chia sẻ link**: cảnh được nén vào chính URL (`#s=...`), không cần server. Người mở link thấy banner
+  "cảnh được chia sẻ" — thay đổi không ghi đè cảnh của họ cho đến khi bấm "Lưu thành cảnh của tôi".
+- Sàn gỗ hiện trạng giữ nguyên, không đổi màu được.
+
 ## Ảnh tham chiếu
 
 `ref/` (ảnh mặt bằng, đồ ở nhà, mẫu lam sóng, ảnh cảm hứng) **không commit** — có ảnh nhà riêng và người.
@@ -92,7 +100,7 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 
 - [x] Lát 1 — scaffold, schema dữ liệu, `room.json` / `catalog.json` theo hiện trạng, viewer thô (sàn + khối tường), camera 3D / mặt bằng
 - [x] Lát 2 — dựng phòng đầy đủ: khoét ô cửa, cửa sổ, cánh cửa + vùng quét, phào chỉ, ốp PVC, trần thả, máy lạnh, đèn; tự ẩn tường chắn tầm nhìn
-- [ ] Lát 3 — chọn tường → đổi màu (wheel + hex), autosave, Export/Import JSON, Share link
+- [x] Lát 3 — chọn tường/trần → đổi màu (color picker + hex + bảng màu concept), bật/tắt phào chỉ, autosave, Export/Import JSON, Share link
 - [ ] Lát 4 — ốp lam sóng (texture từ ảnh thật, biên dạng 3D)
 - [ ] Lát 5 — Export for AI (bộ ảnh góc nhìn + prompt cho Gemini), deploy
 
