@@ -61,7 +61,17 @@ export function ItemInspector({ room, item, placement: p, warnings, onChange, on
         </h2>
         <button class="icon-btn" onClick={onClose} aria-label="Bỏ chọn" title="Bỏ chọn (Esc)">×</button>
       </header>
-      <p class="hint">{sizeText(item)}{item.notes ? ` — ${item.notes}` : ''}</p>
+      <p class="hint">
+        {sizeText(item)}
+        {item.designer ? ` · ${item.designer}` : ''}
+        {item.notes ? ` — ${item.notes}` : ''}
+        {item.source?.url && (
+          <>
+            {' '}
+            <a class="src-link" href={item.source.url} target="_blank" rel="noreferrer noopener">Ảnh & nguồn ↗</a>
+          </>
+        )}
+      </p>
 
       {'wall' in p ? <WallFields room={room} item={item} p={p} onChange={onChange} /> : <FloorFields room={room} item={item} p={p} onChange={onChange} onRotate={onRotate} />}
 
@@ -97,9 +107,13 @@ function FloorFields({ room, item, p, onChange, onRotate }: { room: Room; item: 
         <NumField label="Từ tường cửa sổ" value={p.x} set={(x) => onChange({ x }, 'pos')} />
         <NumField label="Từ tường phải (WC)" value={p.z} set={(z) => onChange({ z }, 'pos')} />
       </div>
-      {item.mount === 'ceiling' && (
+      {item.mount === 'ceiling' ? (
         <div class="num-row">
           <NumField label="Thả từ trần xuống" value={p.drop ?? 30} set={(drop) => onChange({ drop: Math.max(0, drop) }, 'drop')} />
+        </div>
+      ) : (
+        <div class="num-row">
+          <NumField label="Cao độ đáy (đặt trên bàn/kệ)" value={p.y ?? 0} step={1} set={(y) => onChange({ y: Math.max(0, y) || undefined }, 'y')} />
         </div>
       )}
 

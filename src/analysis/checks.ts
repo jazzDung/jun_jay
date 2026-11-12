@@ -70,8 +70,8 @@ export function wallDistances(room: Room, info: ItemInfo): { label: string; cm: 
 
 const overlaps = (a: Rect, b: Rect, tol = 0.5) => a.x0 < b.x1 - tol && b.x0 < a.x1 - tol && a.z0 < b.z1 - tol && b.z0 < a.z1 - tol;
 
-/** Món nằm sàn và chắn lối đi (bỏ thảm, đồ treo trần). */
-const isObstacle = (i: ItemInfo) => i.item.mount === 'floor' && i.item.category !== 'rug';
+/** Món nằm sàn và chắn lối đi (bỏ thảm, đồ treo trần, đồ đặt trên mặt bàn). */
+const isObstacle = (i: ItemInfo) => i.item.mount === 'floor' && i.item.category !== 'rug' && !(i.placement.y && i.placement.y > 0);
 
 // --------------------------------------------------------------- doors
 
@@ -271,7 +271,7 @@ export function analyze(room: Room, scene: Scene, catalog: Map<string, CatalogIt
   }
 
   for (const it of items) {
-    if (it.item.mount !== 'floor') continue;
+    if (it.item.mount !== 'floor' || (it.placement.y ?? 0) > 0) continue;
     const zn = zoneAt(room, it.placement.x, it.placement.z);
     const r = it.rect;
     if (!zn) {

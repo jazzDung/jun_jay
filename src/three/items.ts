@@ -81,7 +81,7 @@ export class ItemLayer {
   place(root: THREE.Object3D, p: Placement, item: CatalogItem): void {
     if ('wall' in p) return this.placeOnWall(root, p, item);
     const ip = p as ItemPlacement;
-    const y = item.mount === 'ceiling' ? cm(this.ceilingHeight - (ip.drop ?? 30) - item.size.h) : 0;
+    const y = item.mount === 'ceiling' ? cm(this.ceilingHeight - (ip.drop ?? 30) - item.size.h) : cm(ip.y ?? 0);
     root.position.set(cm(ip.x), y, cm(ip.z));
     root.rotation.set(0, -THREE.MathUtils.degToRad(ip.rot), 0); // rot dương = theo chiều kim đồng hồ nhìn từ trên
   }

@@ -276,9 +276,14 @@ export const CatalogItem = z.object({
   qty: z.number().int().positive().default(1),
   /** Ảnh tham chiếu gốc trong ref/ (chỉ có ở máy local, không deploy). */
   ref: z.string().optional(),
+  /** Nguồn tham khảo: trang có ảnh + số đo (không chép ảnh về repo). */
   source: z
     .object({ url: z.string().optional(), store: z.string().optional(), price: z.number().optional() })
     .optional(),
+  /** Phong cách — để lọc trong catalog. */
+  style: z.enum(['bauhaus', 'oriental', 'neutral']).optional(),
+  /** Nhà thiết kế / xuất xứ (hiển thị trong panel món). */
+  designer: z.string().optional(),
   notes: z.string().default(''),
   todo: Todo,
 });
@@ -299,6 +304,8 @@ export const ItemPlacement = z.object({
   x: z.number(),
   z: z.number(),
   rot: z.number().default(0),
+  /** Cao độ đáy so với sàn (cm) — món đặt trên mặt bàn / kệ. */
+  y: z.number().nonnegative().optional(),
   /** Chỉ đồ treo trần: khoảng thả từ trần xuống tới đỉnh vật (cm). */
   drop: z.number().nonnegative().optional(),
   /** Món là đèn: trạng thái trong cảnh này. */

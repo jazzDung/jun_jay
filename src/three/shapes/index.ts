@@ -9,6 +9,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { CatalogItem } from '../../data/schema';
 import { cm } from '../units';
+import { EXTRA_SHAPES } from './extra';
+import { patternTexture } from './patterns';
 
 type MatSpec = CatalogItem['materials'][string];
 
@@ -22,7 +24,7 @@ interface Ctx {
   glow: boolean;
 }
 
-type ShapeFn = (c: Ctx) => THREE.Object3D[];
+export type ShapeFn = (c: Ctx) => THREE.Object3D[];
 
 // ---------------------------------------------------------------- materials
 
@@ -64,8 +66,12 @@ function makeMaterial(spec: MatSpec | undefined, fallback: string, glow: boolean
   const [roughness, metalness] = ROUGH[type];
   const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
   if (spec?.texture) {
-    mat.map = loadTexture(spec.texture);
-    mat.color.set('#ffffff'); // texture đã mang màu thật
+    // "gen:<hoạ tiết>:<màu…>" = hoạ tiết sinh bằng code; còn lại là ảnh trong public/
+    const tex = spec.texture.startsWith('gen:') ? patternTexture(spec.texture) : loadTexture(spec.texture);
+    if (tex) {
+      mat.map = tex;
+      mat.color.set('#ffffff'); // texture đã mang màu thật
+    }
   }
   if (type === 'glass') Object.assign(mat, { transparent: true, opacity: 0.35, depthWrite: false });
   // đèn: chao giấy / mica tự phát sáng (ánh sáng thật làm ở v4)
@@ -79,27 +85,27 @@ function makeMaterial(spec: MatSpec | undefined, fallback: string, glow: boolean
 
 // ------------------------------------------------------------------ helpers
 
-function box(w: number, h: number, d: number, mat: THREE.Material, x = 0, y = 0, z = 0, r = 0): THREE.Mesh {
+export function box(w: number, h: number, d: number, mat: THREE.Material, x = 0, y = 0, z = 0, r = 0): THREE.Mesh {
   const geo = r > 0 ? new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2)) : new THREE.BoxGeometry(w, h, d);
   const m = new THREE.Mesh(geo, mat);
   m.position.set(x, y + h / 2, z);
   return m;
 }
 
-function cyl(rTop: number, rBottom: number, h: number, mat: THREE.Material, x = 0, y = 0, z = 0, seg = 24): THREE.Mesh {
+export function cyl(rTop: number, rBottom: number, h: number, mat: THREE.Material, x = 0, y = 0, z = 0, seg = 24): THREE.Mesh {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBottom, h, seg), mat);
   m.position.set(x, y + h / 2, z);
   return m;
 }
 
 /** 4 chân ở góc, lùi vào `inset`. */
-function legs(w: number, d: number, h: number, mat: THREE.Material, inset: number, r = 0.015): THREE.Mesh[] {
+export function legs(w: number, d: number, h: number, mat: THREE.Material, inset: number, r = 0.015): THREE.Mesh[] {
   const xs = [-w / 2 + inset, w / 2 - inset];
   const zs = [-d / 2 + inset, d / 2 - inset];
   return xs.flatMap((x) => zs.map((z) => cyl(r, r * 0.8, h, mat, x, 0, z, 12)));
 }
 
-const num = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
+export const num = (v: unknown, d: number) => (typeof v === 'number' ? v : d);
 
 // -------------------------------------------------------------------- shapes
 
@@ -498,7 +504,7 @@ export function buildShape(item: CatalogItem): THREE.Group {
     }
     return m;
   };
-  const fn = SHAPES[item.shape] ?? plainBox;
+  const fn = SHAPES[item.shape] ?? EXTRA_SHAPES[item.shape] ?? plainBox;
   const g = new THREE.Group();
   g.add(...fn({ w: cm(item.size.w), d: cm(item.size.d), h: cm(item.size.h), p: item.params, mat, glow }));
   g.name = `shape:${item.id}`;

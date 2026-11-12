@@ -29,7 +29,7 @@ interface Props {
 
 export function sizeText(it: CatalogItem): string {
   const { w, d, h } = it.size;
-  return w === d && ['stool', 'table_round', 'lantern', 'cushion'].includes(it.shape) ? `Ø${w} × ${h} cm` : `${w} × ${d} × ${h} cm`;
+  return w === d && ['stool', 'table_round', 'lantern', 'cushion', 'pouf', 'tray_table', 'drum_stool', 'ring_table', 'globe_lamp', 'vase', 'pendant', 'rug_round'].includes(it.shape) ? `Ø${w} × ${h} cm` : `${w} × ${d} × ${h} cm`;
 }
 
 function swatch(it: CatalogItem): string {
@@ -44,6 +44,7 @@ export function Catalog({ items, scene, onAdd, onClose }: Props) {
   const categories = useMemo(() => [...new Set(placeable.map((i) => i.category))], [placeable]);
   const [cat, setCat] = useState<string | null>(null);
   const [ownedOnly, setOwnedOnly] = useState(false);
+  const [style, setStyle] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const placed = useMemo(() => {
     const m = new Map<string, number>();
@@ -54,7 +55,7 @@ export function Catalog({ items, scene, onAdd, onClose }: Props) {
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
   const query = norm(q.trim());
   const list = placeable.filter(
-    (i) => (!cat || i.category === cat) && (!ownedOnly || i.owned) && (!query || norm(i.name).includes(query)),
+    (i) => (!cat || i.category === cat) && (!ownedOnly || i.owned) && (!style || i.style === style) && (!query || norm(i.name).includes(query)),
   );
 
   return (
@@ -73,6 +74,8 @@ export function Catalog({ items, scene, onAdd, onClose }: Props) {
             </button>
           ))}
           <button class="owned-chip" aria-pressed={ownedOnly} onClick={() => setOwnedOnly(!ownedOnly)}>★ Đồ có sẵn</button>
+          <button aria-pressed={style === 'bauhaus'} onClick={() => setStyle(style === 'bauhaus' ? null : 'bauhaus')}>◼ Bauhaus</button>
+          <button aria-pressed={style === 'oriental'} onClick={() => setStyle(style === 'oriental' ? null : 'oriental')}>✦ Phương Đông</button>
         </div>
         <ul class="catalog-list">
           {list.map((it) => {

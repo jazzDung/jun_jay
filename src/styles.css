@@ -292,3 +292,5 @@ input.kelvin::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; 
 .render-bar progress { flex: 1; min-width: 120px; height: 10px; accent-color: var(--accent); }
 .render-bar .btn { margin-top: 0 !important; }
 .bad { color: var(--error); }
+
+.src-link { color: var(--accent); white-space: nowrap; }
