@@ -17,6 +17,7 @@ import {
 import { Viewer, type CameraMode, type PickTarget } from '../three/viewer';
 import { Catalog } from './Catalog';
 import { Joystick } from './LightControls';
+import { RenderDialog } from './RenderDialog';
 import { Sidebar, type ItemActions } from './Sidebar';
 
 type LoadState =
@@ -50,6 +51,7 @@ export function App() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [renderOpen, setRenderOpen] = useState(false);
   const history = useRef({ past: [] as Scene[], future: [] as Scene[], tag: undefined as string | undefined, at: 0 });
 
   // ------------------------------------------------------------ history
@@ -460,7 +462,9 @@ export function App() {
           onExportAi={exportAi}
           onSnapshot={() => viewerRef.current && downloadSnapshot(viewerRef.current)}
           exporting={exporting}
+          onRenderHQ={() => setRenderOpen(true)}
         />
+        {renderOpen && viewerRef.current && <RenderDialog viewer={viewerRef.current} onClose={() => setRenderOpen(false)} />}
         {toast && (
           <div class={`toast ${toast.kind}`} role="status">
             <div>

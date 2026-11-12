@@ -324,7 +324,9 @@ function buildOpening(frame: WallFrame, o: Opening): THREE.Group {
         const y = y0 + ((y1 - y0) * r) / f.rows;
         g.add(box(w, bar * 0.7, 0.04, alu, (fa + fb) / 2, y, zc));
       }
-      g.add(box(w, y1 - y0, 0.004, glass, (fa + fb) / 2, (y0 + y1) / 2, zc));
+      const pane = box(w, y1 - y0, 0.004, glass, (fa + fb) / 2, (y0 + y1) / 2, zc);
+      pane.userData.glass = true;
+      g.add(pane);
       g.add(box(bar, y1 - y0, 0.05, alu, fa + bar / 2, (y0 + y1) / 2, zc));
       g.add(box(bar, y1 - y0, 0.05, alu, fb - bar / 2, (y0 + y1) / 2, zc));
     });

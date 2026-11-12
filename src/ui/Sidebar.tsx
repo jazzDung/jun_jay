@@ -39,6 +39,7 @@ interface Props {
   onReset: () => void;
   onExportAi: () => void;
   onSnapshot: () => void;
+  onRenderHQ: () => void;
   exporting: boolean;
 }
 
@@ -159,7 +160,7 @@ function ItemPanel({ room, scene, catalog, warnings, itemActions, onClearSelecti
   );
 }
 
-function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, exporting }: Props) {
+function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, onRenderHQ, exporting }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const changedWalls = Object.keys(scene.room.walls).length;
@@ -219,8 +220,9 @@ function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExpo
       )}
       <LightingSection room={room} scene={scene} onScene={onScene} />
       <h3>Ảnh</h3>
+      <button class="btn accent wide" onClick={onRenderHQ} title="Path tracing: ánh sáng và bóng đổ như thật">✦ Render đẹp</button>
       <div class="btn-grid">
-        <button class="btn accent" onClick={onExportAi} disabled={exporting} title="Bộ ảnh các góc nhìn + prompt mô tả chi tiết, nén .zip">
+        <button class="btn" onClick={onExportAi} disabled={exporting} title="Bộ ảnh các góc nhìn + prompt mô tả chi tiết, nén .zip">
           {exporting ? 'Đang render…' : 'Xuất cho AI'}
         </button>
         <button class="btn" onClick={onSnapshot}>Chụp ảnh PNG</button>

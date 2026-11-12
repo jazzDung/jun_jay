@@ -17,7 +17,8 @@ function makeCanvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingCo
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
-  return [c, c.getContext('2d')!];
+  // willReadFrequently → canvas nằm trong bộ nhớ CPU, không mất nội dung khi GPU bị reset
+  return [c, c.getContext('2d', { willReadFrequently: true })!];
 }
 
 function finish(canvas: HTMLCanvasElement, period: [number, number]): PeriodicTexture {

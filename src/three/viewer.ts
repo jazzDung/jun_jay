@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { CatalogItem, ItemPlacement, Panel, Panels, Placement, Room, Scene, WallPlacement } from '../data/schema';
 import { ItemLayer } from './items';
-import { AMBIENT, createLight, resolveLight, updateGlow, updateLight } from './lighting';
+import { AMBIENT, candelaOf, createLight, resolveLight, updateGlow, updateLight } from './lighting';
+import { pathTrace, type PathTraceOptions } from './pathtrace';
 import { buildPanel } from './room/panel';
 import { buildRoom, type PickTarget, type RoomBuild } from './room/buildRoom';
 
@@ -78,6 +79,8 @@ export class Viewer {
   private readonly walk = new THREE.Vector2();
   private readonly keys = new Set<string>();
   private lastFrame = performance.now();
+  private busy = false;
+  private sceneMode: 'day' | 'night' = 'day';
   private readonly resizeObserver: ResizeObserver;
   private disposed = false;
 
@@ -199,6 +202,7 @@ export class Viewer {
     if (!this.drag) this.items?.sync(scene);
 
     // ánh sáng: ngày / đêm, đèn hiện trạng, bóng đổ
+    this.sceneMode = scene.mode;
     const amb = AMBIENT[scene.mode];
     this.hemi.intensity = amb.hemi;
     this.sun.intensity = amb.sun;
@@ -546,6 +550,48 @@ export class Viewer {
     return { canvas, camera };
   }
 
+  /**
+   * Render chất lượng cao (path tracing) từ góc camera 3D / tầm mắt hiện tại.
+   * Trong lúc render, khung nhìn real-time tạm dừng.
+   */
+  async renderHQ(opts: Omit<PathTraceOptions, 'mode'>): Promise<HTMLCanvasElement> {
+    const b = this.built;
+    if (!b || this.busy) throw new Error('Đang bận render');
+    this.busy = true;
+    this.label.hidden = true;
+    try {
+      const itemLights = [...(this.items?.objects.values() ?? [])].flatMap((o) => {
+        const item = this.catalog.get(o.catalogId);
+        if (!o.light || !o.resolved || !item?.light) return [];
+        const t = item.light.type;
+        return [{ holder: o.light, root: o.root, on: o.resolved.on, color: o.resolved.color, candela: candelaOf(t, o.resolved.intensity), enclosed: t === 'point' || t === 'spot' }];
+      });
+      return await pathTrace(
+        {
+          renderer: this.renderer,
+          scene: this.scene,
+          camera: this.persp,
+          rasterOnly: [this.hemi, this.fill],
+          sun: this.sun,
+          backdrop: b.backdrop,
+          ceiling: b.ceiling,
+          ceilingMat: b.ceilingSurface.mat,
+          walls: b.cutaway.map((c) => c.group),
+          helpers: [this.selectionBox, ...this.warnBoxes, ...(this.grid ? [this.grid] : [])],
+          itemLights,
+        },
+        { ...opts, mode: this.sceneMode },
+      );
+    } finally {
+      this.busy = false;
+      this.updateVisibility();
+    }
+  }
+
+  get cameraMode(): CameraMode {
+    return this.mode;
+  }
+
   /** Chụp khung hình hiện tại ra PNG. */
   snapshot(): string {
     this.renderer.render(this.scene, this.activeCamera());
@@ -807,7 +853,7 @@ export class Viewer {
   }
 
   private frame(): void {
-    if (this.disposed) return;
+    if (this.disposed || this.busy) return;
     const now = performance.now();
     this.stepWalk(Math.min((now - this.lastFrame) / 1000, 0.1));
     this.lastFrame = now;

@@ -84,6 +84,11 @@ export function createLight(spec: LightSpec, size: { w: number; h: number; d: nu
   return g;
 }
 
+/** Cường độ (candela, thang của app) của một đèn point/spot. */
+export function candelaOf(type: LightSpec['type'], intensity: number): number {
+  return (type === 'spot' ? CANDELA_SPOT * 0.45 : CANDELA_POINT) * intensity;
+}
+
 /** Áp trạng thái (bật/tắt, màu, độ sáng) lên nguồn sáng đã tạo bằng createLight. */
 export function updateLight(holder: THREE.Object3D, r: Resolved): void {
   holder.traverse((o) => {

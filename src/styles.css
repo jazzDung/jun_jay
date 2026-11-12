@@ -277,3 +277,18 @@ input.kelvin::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; 
   .joystick { bottom: calc(48% + 16px); }
   .eye-hint { display: none; }
 }
+
+
+/* ------------------------------------------------------------ render HQ */
+.btn.wide { width: 100%; margin-top: 4px; }
+.modal { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(15, 12, 10, 0.82); padding: 16px; }
+.modal-box {
+  width: min(1100px, 100%); max-height: 100%; overflow: auto; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.modal-box .btn.accent { margin-top: 12px; }
+.render-preview { display: block; width: 100%; height: auto; border-radius: 8px; background: #000; }
+.render-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; font-size: 14px; }
+.render-bar progress { flex: 1; min-width: 120px; height: 10px; accent-color: var(--accent); }
+.render-bar .btn { margin-top: 0 !important; }
+.bad { color: var(--error); }
