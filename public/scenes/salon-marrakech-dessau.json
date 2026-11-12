@@ -1,0 +1,316 @@
+{
+ "version": 1,
+ "name": "1 · Salon Marrakech – Dessau",
+ "room": {
+  "walls": {
+   "wall_top": {
+    "color": "#EFE3CC",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_teak",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 110,
+     "uRange": [
+      50,
+      400
+     ]
+    }
+   },
+   "wall_bottom": {
+    "color": "#EFE3CC",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_teak",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 110,
+     "uRange": [
+      50,
+      400
+     ]
+    }
+   },
+   "wall_window": {
+    "color": "#2B4BD9"
+   },
+   "wall_back_wc": {
+    "color": "#B5462E"
+   },
+   "wall_back_bar": {
+    "color": "#B5462E"
+   },
+   "wall_back_hall": {
+    "color": "#B5462E"
+   }
+  },
+  "hiddenFixtures": [
+   "tube_top",
+   "tube_bottom"
+  ],
+  "fixtureLights": {
+   "downlight": {
+    "on": true,
+    "kelvin": 3000,
+    "intensity": 0.7
+   }
+  }
+ },
+ "items": [
+  {
+   "uid": "sa1",
+   "catalogId": "persian_rug_round_200",
+   "x": 190,
+   "z": 200,
+   "rot": 0
+  },
+  {
+   "uid": "sa2",
+   "catalogId": "majlis_sofa_200",
+   "x": 215,
+   "z": 358,
+   "rot": 180
+  },
+  {
+   "uid": "sa3",
+   "catalogId": "majlis_sofa_140_blue",
+   "x": 190,
+   "z": 42,
+   "rot": 0
+  },
+  {
+   "uid": "sa4",
+   "catalogId": "brass_tray_table",
+   "x": 190,
+   "z": 185,
+   "rot": 0
+  },
+  {
+   "uid": "sa5",
+   "catalogId": "moroccan_pouf_terracotta",
+   "x": 300,
+   "z": 120,
+   "rot": 0
+  },
+  {
+   "uid": "sa6",
+   "catalogId": "moroccan_pouf_cobalt",
+   "x": 70,
+   "z": 130,
+   "rot": 0
+  },
+  {
+   "uid": "sa7",
+   "catalogId": "moroccan_pouf_tan",
+   "x": 330,
+   "z": 290,
+   "rot": 0
+  },
+  {
+   "uid": "sa8",
+   "catalogId": "kentia_palm",
+   "x": 50,
+   "z": 345,
+   "rot": 0
+  },
+  {
+   "uid": "sa9",
+   "catalogId": "garden_stool_blue_white",
+   "x": 330,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "sa10",
+   "catalogId": "wagenfeld_lamp",
+   "x": 330,
+   "z": 40,
+   "rot": 0,
+   "y": 46
+  },
+  {
+   "uid": "sa11",
+   "catalogId": "moroccan_lantern",
+   "x": 190,
+   "z": 185,
+   "rot": 0,
+   "drop": 35
+  },
+  {
+   "uid": "sa12",
+   "catalogId": "moroccan_lantern",
+   "x": 80,
+   "z": 260,
+   "rot": 0,
+   "drop": 45
+  },
+  {
+   "uid": "sa13",
+   "catalogId": "suzani_hanging",
+   "wall": "wall_bottom",
+   "u": 215,
+   "v": 178
+  },
+  {
+   "uid": "sa14",
+   "catalogId": "kilim_hanging",
+   "wall": "wall_top",
+   "u": 190,
+   "v": 185
+  },
+  {
+   "uid": "sa15",
+   "catalogId": "arch_mirror_brass",
+   "wall": "wall_top",
+   "u": 330,
+   "v": 170
+  },
+  {
+   "uid": "sa16",
+   "catalogId": "zellige_cafe_table",
+   "x": 465,
+   "z": 45,
+   "rot": 0
+  },
+  {
+   "uid": "sa17",
+   "catalogId": "cesca_chair",
+   "x": 411,
+   "z": 45,
+   "rot": 270
+  },
+  {
+   "uid": "sa18",
+   "catalogId": "cesca_chair",
+   "x": 519,
+   "z": 45,
+   "rot": 90
+  },
+  {
+   "uid": "sa19",
+   "catalogId": "zellige_cafe_table",
+   "x": 640,
+   "z": 45,
+   "rot": 0
+  },
+  {
+   "uid": "sa20",
+   "catalogId": "cesca_chair",
+   "x": 586,
+   "z": 45,
+   "rot": 270
+  },
+  {
+   "uid": "sa21",
+   "catalogId": "cesca_chair",
+   "x": 694,
+   "z": 45,
+   "rot": 90
+  },
+  {
+   "uid": "sa22",
+   "catalogId": "tube_work_desk_120",
+   "x": 480,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "sa23",
+   "catalogId": "cesca_chair",
+   "x": 452,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "sa24",
+   "catalogId": "cesca_chair",
+   "x": 508,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "sa25",
+   "catalogId": "pendant_dome_black",
+   "x": 480,
+   "z": 368,
+   "rot": 0,
+   "drop": 75
+  },
+  {
+   "uid": "sa26",
+   "catalogId": "tube_work_desk_120",
+   "x": 630,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "sa27",
+   "catalogId": "cesca_chair",
+   "x": 602,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "sa28",
+   "catalogId": "cesca_chair",
+   "x": 658,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "sa29",
+   "catalogId": "pendant_dome_black",
+   "x": 630,
+   "z": 368,
+   "rot": 0,
+   "drop": 75
+  },
+  {
+   "uid": "sa30",
+   "catalogId": "kilim_runner_80x300",
+   "x": 560,
+   "z": 200,
+   "rot": 90
+  },
+  {
+   "uid": "sa31",
+   "catalogId": "bauhaus_poster_a",
+   "wall": "wall_bottom",
+   "u": 480,
+   "v": 160
+  },
+  {
+   "uid": "sa32",
+   "catalogId": "bauhaus_poster_b",
+   "wall": "wall_bottom",
+   "u": 630,
+   "v": 165
+  },
+  {
+   "uid": "sa33",
+   "catalogId": "opal_wall_globe",
+   "wall": "wall_top",
+   "u": 465,
+   "v": 175
+  },
+  {
+   "uid": "sa34",
+   "catalogId": "opal_wall_globe",
+   "wall": "wall_top",
+   "u": 640,
+   "v": 175
+  },
+  {
+   "uid": "sa35",
+   "catalogId": "terracotta_vase_tall",
+   "x": 730,
+   "z": 375,
+   "rot": 0
+  }
+ ],
+ "lights": [],
+ "mode": "day",
+ "shadows": true
+}

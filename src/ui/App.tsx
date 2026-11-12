@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { analyze, footprint, wallDistances } from '../analysis/checks';
 import { loadDefaultData } from '../data/load';
 import type { ItemPlacement, Placement, Scene, WallPlacement } from '../data/schema';
-import type { DataBundle } from '../data/validate';
+import { parseScene, type DataBundle } from '../data/validate';
 import { downloadSnapshot, exportForAi } from '../export/exportAi';
 import {
   clearLocal,
@@ -18,7 +18,7 @@ import { Viewer, type CameraMode, type PickTarget } from '../three/viewer';
 import { Catalog } from './Catalog';
 import { Joystick } from './LightControls';
 import { RenderDialog } from './RenderDialog';
-import { Sidebar, type ItemActions } from './Sidebar';
+import { Sidebar, type ItemActions, type Preset } from './Sidebar';
 
 type LoadState =
   | { status: 'loading' }
@@ -52,6 +52,7 @@ export function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [exporting, setExporting] = useState(false);
   const [renderOpen, setRenderOpen] = useState(false);
+  const [presets, setPresets] = useState<Preset[]>([]);
   const history = useRef({ past: [] as Scene[], future: [] as Scene[], tag: undefined as string | undefined, at: 0 });
 
   // ------------------------------------------------------------ history
@@ -182,6 +183,14 @@ export function App() {
       if (init.source === 'shared') setSaveState('shared');
       if (init.notices.length) setToast({ kind: 'error', lines: init.notices });
     })();
+  }, []);
+
+  // Danh sách phương án mẫu (public/scenes/index.json) — thiếu file thì bỏ qua
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}scenes/index.json`, { cache: 'no-cache' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list) => setPresets(Array.isArray(list) ? (list as Preset[]) : []))
+      .catch(() => setPresets([]));
   }, []);
 
   // Dán link chia sẻ vào tab đang mở app chỉ đổi hash, trình duyệt không tải lại → tự tải lại.
@@ -346,6 +355,22 @@ export function App() {
     setToast({ kind: 'info', lines: [`Đã nhập "${r.data.name}".`, ...r.warnings] });
   };
 
+  const openPreset = async (preset: Preset) => {
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}${preset.file}`, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const r = parseScene(await res.json(), state.data, preset.file);
+      if (!r.ok) return setToast({ kind: 'error', lines: ['Phương án mẫu không hợp lệ:', ...r.errors] });
+      if (source === 'shared') clearShareHash();
+      setSource('local');
+      commit(() => r.data);
+      setSelection(null);
+      setToast({ kind: 'info', lines: [`Đã mở "${r.data.name}". Bấm ↶ để quay lại cảnh trước đó.`] });
+    } catch (e) {
+      setToast({ kind: 'error', lines: ['Không tải được phương án mẫu:', (e as Error).message] });
+    }
+  };
+
   const exportAi = async () => {
     const viewer = viewerRef.current;
     if (!viewer) return;
@@ -463,6 +488,8 @@ export function App() {
           onSnapshot={() => viewerRef.current && downloadSnapshot(viewerRef.current)}
           exporting={exporting}
           onRenderHQ={() => setRenderOpen(true)}
+          presets={presets}
+          onOpenPreset={openPreset}
         />
         {renderOpen && viewerRef.current && <RenderDialog viewer={viewerRef.current} onClose={() => setRenderOpen(false)} />}
         {toast && (

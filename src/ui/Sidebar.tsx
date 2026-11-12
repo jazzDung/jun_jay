@@ -12,6 +12,14 @@ import { ItemInspector } from './ItemInspector';
 import { LightingSection } from './LightControls';
 import { PanelEditor } from './PanelEditor';
 
+/** Phương án thiết kế mẫu trong public/scenes. */
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  file: string;
+}
+
 /** Thao tác trên món đang chọn — App cài đặt (có undo/redo). */
 export interface ItemActions {
   update: (uid: string, patch: Partial<ItemPlacement & WallPlacement>, tag?: string) => void;
@@ -40,6 +48,8 @@ interface Props {
   onExportAi: () => void;
   onSnapshot: () => void;
   onRenderHQ: () => void;
+  presets: Preset[];
+  onOpenPreset: (p: Preset) => void;
   exporting: boolean;
 }
 
@@ -160,7 +170,7 @@ function ItemPanel({ room, scene, catalog, warnings, itemActions, onClearSelecti
   );
 }
 
-function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, onRenderHQ, exporting }: Props) {
+function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExport, onImport, onShare, onReset, onExportAi, onSnapshot, onRenderHQ, exporting, presets, onOpenPreset }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const changedWalls = Object.keys(scene.room.walls).length;
@@ -202,6 +212,21 @@ function SceneInfo({ room, scene, saveState, warnings, onSelect, onScene, onExpo
           <button class="btn ghost" onClick={() => setConfirmReset(true)}>Đặt lại</button>
         )}
       </div>
+      {presets.length > 0 && (
+        <details class="light-group presets">
+          <summary>Phương án mẫu ({presets.length})</summary>
+          <ul class="preset-list">
+            {presets.map((p) => (
+              <li key={p.id}>
+                <button class="preset" onClick={() => onOpenPreset(p)} title="Mở phương án này (hoàn tác được)">
+                  <b>{p.name}</b>
+                  <span>{p.description}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {warnings.length > 0 && (
         <>
           <h3>Cảnh báo ({warnings.length})</h3>

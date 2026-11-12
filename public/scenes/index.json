@@ -1,0 +1,32 @@
+[
+ {
+  "id": "salon-marrakech-dessau",
+  "name": "1 · Salon Marrakech – Dessau",
+  "description": "Kem ấm + đỏ gạch + cobalt. Khu trò chuyện ngồi bệt kiểu majlis quanh mâm đồng; khu làm việc bàn zellige và bàn ống thép với ghế Cesca.",
+  "file": "scenes/salon-marrakech-dessau.json"
+ },
+ {
+  "id": "bauhaus-werkstatt",
+  "name": "2 · Xưởng Bauhaus",
+  "description": "Trắng ngà + đen + ba màu cơ bản. Sofa da và ghế Wassily quanh bàn Laccio trên thảm hình học; bàn chung dài cho người làm việc, chút phương Đông ở đôn sứ và pouf.",
+  "file": "scenes/bauhaus-werkstatt.json"
+ },
+ {
+  "id": "tra-that-indigo",
+  "name": "3 · Trà thất Indigo",
+  "description": "Chàm + gỗ sồi vàng + giấy washi. Ngồi bệt quanh bàn trà thấp dưới đèn Akari, băng ngồi cửa sổ; bình phong ngăn sang quầy laptop cao và bàn đôi yên tĩnh.",
+  "file": "scenes/tra-that-indigo.json"
+ },
+ {
+  "id": "tiem-do-gach",
+  "name": "4 · Tiệm Đỏ Gạch",
+  "description": "Cam mơ + xanh rêu + gỗ sồi đỏ ốp lửng. Booth da và ghế Barcelona quanh thảm Ba Tư, ghế mây lưng quạt ở góc; khu trong là bàn làm việc ống thép và bàn zellige dưới đèn lồng đồng.",
+  "file": "scenes/tiem-do-gach.json"
+ },
+ {
+  "id": "dem-cobalt",
+  "name": "5 · Đêm Cobalt (đồ sẵn có)",
+  "description": "Buổi tối: tường cobalt sẫm, lam teak, chỉ đèn ấm. Dùng tối đa đồ Jazz đang có — thảm hổ, bàn trà oval, tranh xanh, poster mèo, đồng hồ, tấm inox, pegboard, đèn BIC, hộp mica — thêm sofa thấp và bàn làm việc nhỏ.",
+  "file": "scenes/dem-cobalt.json"
+ }
+]

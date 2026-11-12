@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "validate-data": "vite-node scripts/validate-data.ts"
+    "validate-data": "vite-node scripts/validate-data.ts",
+    "check-scenes": "vite-node scripts/check-scenes.ts"
   },
   "dependencies": {
     "fflate": "^0.8.3",

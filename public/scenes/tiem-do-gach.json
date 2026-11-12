@@ -1,0 +1,318 @@
+{
+ "version": 1,
+ "name": "4 · Tiệm Đỏ Gạch",
+ "room": {
+  "walls": {
+   "wall_top": {
+    "color": "#D98A5F",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_oak_red",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 95,
+     "uRange": [
+      50,
+      800
+     ]
+    }
+   },
+   "wall_bottom": {
+    "color": "#D98A5F",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_oak_red",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 95,
+     "uRange": [
+      50,
+      800
+     ]
+    }
+   },
+   "wall_window": {
+    "color": "#4E6B4A"
+   },
+   "wall_back_wc": {
+    "color": "#EFE3CC"
+   },
+   "wall_back_bar": {
+    "color": "#EFE3CC"
+   },
+   "wall_back_hall": {
+    "color": "#EFE3CC"
+   }
+  },
+  "hiddenFixtures": [
+   "tube_top",
+   "tube_bottom"
+  ],
+  "fixtureLights": {
+   "downlight": {
+    "on": true,
+    "kelvin": 3000,
+    "intensity": 0.7
+   }
+  }
+ },
+ "items": [
+  {
+   "uid": "ti1",
+   "catalogId": "persian_rug_200x300",
+   "x": 215,
+   "z": 215,
+   "rot": 90
+  },
+  {
+   "uid": "ti2",
+   "catalogId": "booth_200",
+   "x": 215,
+   "z": 368,
+   "rot": 180
+  },
+  {
+   "uid": "ti3",
+   "catalogId": "barcelona_chair",
+   "x": 150,
+   "z": 62,
+   "rot": 0
+  },
+  {
+   "uid": "ti4",
+   "catalogId": "barcelona_chair",
+   "x": 280,
+   "z": 62,
+   "rot": 0
+  },
+  {
+   "uid": "ti5",
+   "catalogId": "brass_tray_table",
+   "x": 215,
+   "z": 200,
+   "rot": 0
+  },
+  {
+   "uid": "ti6",
+   "catalogId": "peacock_chair",
+   "x": 62,
+   "z": 140,
+   "rot": 270
+  },
+  {
+   "uid": "ti7",
+   "catalogId": "moroccan_pouf_tan",
+   "x": 345,
+   "z": 180,
+   "rot": 0
+  },
+  {
+   "uid": "ti8",
+   "catalogId": "moroccan_pouf_terracotta",
+   "x": 60,
+   "z": 262,
+   "rot": 0
+  },
+  {
+   "uid": "ti9",
+   "catalogId": "kentia_palm",
+   "x": 52,
+   "z": 345,
+   "rot": 0
+  },
+  {
+   "uid": "ti10",
+   "catalogId": "e1027_table",
+   "x": 215,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "ti11",
+   "catalogId": "kaiser_idell_lamp",
+   "x": 215,
+   "z": 40,
+   "rot": 0,
+   "y": 62
+  },
+  {
+   "uid": "ti12",
+   "catalogId": "moroccan_lantern",
+   "x": 215,
+   "z": 200,
+   "rot": 0,
+   "drop": 30
+  },
+  {
+   "uid": "ti13",
+   "catalogId": "moroccan_lantern",
+   "x": 120,
+   "z": 120,
+   "rot": 0,
+   "drop": 45
+  },
+  {
+   "uid": "ti14",
+   "catalogId": "moroccan_lantern",
+   "x": 310,
+   "z": 300,
+   "rot": 0,
+   "drop": 40
+  },
+  {
+   "uid": "ti15",
+   "catalogId": "arch_mirror_brass",
+   "wall": "wall_bottom",
+   "u": 120,
+   "v": 165
+  },
+  {
+   "uid": "ti16",
+   "catalogId": "suzani_hanging",
+   "wall": "wall_bottom",
+   "u": 250,
+   "v": 180
+  },
+  {
+   "uid": "ti17",
+   "catalogId": "mashrabiya_panel",
+   "wall": "wall_top",
+   "u": 215,
+   "v": 185
+  },
+  {
+   "uid": "ti18",
+   "catalogId": "tube_work_desk_120",
+   "x": 470,
+   "z": 32,
+   "rot": 0
+  },
+  {
+   "uid": "ti19",
+   "catalogId": "mr10_chair",
+   "x": 442,
+   "z": 98,
+   "rot": 180
+  },
+  {
+   "uid": "ti20",
+   "catalogId": "mr10_chair",
+   "x": 498,
+   "z": 98,
+   "rot": 180
+  },
+  {
+   "uid": "ti21",
+   "catalogId": "wall_light_round_orange",
+   "wall": "wall_top",
+   "u": 470,
+   "v": 185
+  },
+  {
+   "uid": "ti22",
+   "catalogId": "tube_work_desk_120",
+   "x": 620,
+   "z": 32,
+   "rot": 0
+  },
+  {
+   "uid": "ti23",
+   "catalogId": "mr10_chair",
+   "x": 592,
+   "z": 98,
+   "rot": 180
+  },
+  {
+   "uid": "ti24",
+   "catalogId": "mr10_chair",
+   "x": 648,
+   "z": 98,
+   "rot": 180
+  },
+  {
+   "uid": "ti25",
+   "catalogId": "wall_light_round_orange",
+   "wall": "wall_top",
+   "u": 620,
+   "v": 185
+  },
+  {
+   "uid": "ti26",
+   "catalogId": "zellige_cafe_table",
+   "x": 470,
+   "z": 362,
+   "rot": 0
+  },
+  {
+   "uid": "ti27",
+   "catalogId": "cesca_chair",
+   "x": 416,
+   "z": 362,
+   "rot": 270
+  },
+  {
+   "uid": "ti28",
+   "catalogId": "cesca_chair",
+   "x": 524,
+   "z": 362,
+   "rot": 90
+  },
+  {
+   "uid": "ti29",
+   "catalogId": "fabric_drum_pendant",
+   "x": 470,
+   "z": 362,
+   "rot": 0,
+   "drop": 65
+  },
+  {
+   "uid": "ti30",
+   "catalogId": "zellige_cafe_table",
+   "x": 640,
+   "z": 362,
+   "rot": 0
+  },
+  {
+   "uid": "ti31",
+   "catalogId": "cesca_chair",
+   "x": 586,
+   "z": 362,
+   "rot": 270
+  },
+  {
+   "uid": "ti32",
+   "catalogId": "cesca_chair",
+   "x": 694,
+   "z": 362,
+   "rot": 90
+  },
+  {
+   "uid": "ti33",
+   "catalogId": "fabric_drum_pendant",
+   "x": 640,
+   "z": 362,
+   "rot": 0,
+   "drop": 65
+  },
+  {
+   "uid": "ti34",
+   "catalogId": "garden_stool_blue_white",
+   "x": 745,
+   "z": 375,
+   "rot": 0
+  },
+  {
+   "uid": "ti35",
+   "catalogId": "terracotta_vase_tall",
+   "x": 745,
+   "z": 375,
+   "rot": 0,
+   "y": 46
+  }
+ ],
+ "lights": [],
+ "mode": "day",
+ "shadows": true
+}

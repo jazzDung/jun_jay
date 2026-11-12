@@ -1,0 +1,305 @@
+{
+ "version": 1,
+ "name": "3 · Trà thất Indigo",
+ "room": {
+  "walls": {
+   "wall_top": {
+    "color": "#F1EADB",
+    "mouldings": false,
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_oak_gold",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "full",
+     "wainscotHeight": 120,
+     "uRange": null
+    }
+   },
+   "wall_bottom": {
+    "color": "#F1EADB",
+    "mouldings": false,
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_oak_gold",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 100,
+     "uRange": [
+      50,
+      800
+     ]
+    }
+   },
+   "wall_window": {
+    "color": "#1F3A8A"
+   },
+   "wall_back_wc": {
+    "color": "#1F3A8A"
+   },
+   "wall_back_bar": {
+    "color": "#1F3A8A",
+    "mouldings": false
+   },
+   "wall_back_hall": {
+    "color": "#1F3A8A"
+   }
+  },
+  "hiddenFixtures": [
+   "tube_top",
+   "tube_bottom"
+  ],
+  "fixtureLights": {
+   "downlight": {
+    "on": true,
+    "kelvin": 3000,
+    "intensity": 0.7
+   }
+  }
+ },
+ "items": [
+  {
+   "uid": "tr1",
+   "catalogId": "window_bench_400",
+   "x": 24,
+   "z": 200,
+   "rot": 270
+  },
+  {
+   "uid": "tr2",
+   "catalogId": "kilim_rug_170x240",
+   "x": 215,
+   "z": 200,
+   "rot": 0
+  },
+  {
+   "uid": "tr3",
+   "catalogId": "low_tea_table_round",
+   "x": 215,
+   "z": 120,
+   "rot": 0
+  },
+  {
+   "uid": "tr4",
+   "catalogId": "low_tea_table_round",
+   "x": 215,
+   "z": 300,
+   "rot": 0
+  },
+  {
+   "uid": "tr5",
+   "catalogId": "floor_cushion_kilim",
+   "x": 140,
+   "z": 120,
+   "rot": 0
+  },
+  {
+   "uid": "tr6",
+   "catalogId": "floor_cushion_kilim",
+   "x": 290,
+   "z": 120,
+   "rot": 0
+  },
+  {
+   "uid": "tr7",
+   "catalogId": "floor_cushion_kilim",
+   "x": 215,
+   "z": 48,
+   "rot": 0
+  },
+  {
+   "uid": "tr8",
+   "catalogId": "floor_cushion_stripe",
+   "x": 140,
+   "z": 300,
+   "rot": 0
+  },
+  {
+   "uid": "tr9",
+   "catalogId": "floor_cushion_stripe",
+   "x": 290,
+   "z": 300,
+   "rot": 0
+  },
+  {
+   "uid": "tr10",
+   "catalogId": "floor_cushion_stripe",
+   "x": 215,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "tr11",
+   "catalogId": "garden_stool_green",
+   "x": 105,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "tr12",
+   "catalogId": "ginger_jar",
+   "x": 105,
+   "z": 40,
+   "rot": 0,
+   "y": 46
+  },
+  {
+   "uid": "tr13",
+   "catalogId": "akari_55a",
+   "x": 215,
+   "z": 120,
+   "rot": 0,
+   "drop": 20
+  },
+  {
+   "uid": "tr14",
+   "catalogId": "akari_55a",
+   "x": 215,
+   "z": 300,
+   "rot": 0,
+   "drop": 35
+  },
+  {
+   "uid": "tr15",
+   "catalogId": "paper_lantern_white",
+   "x": 90,
+   "z": 215,
+   "rot": 0,
+   "drop": 45
+  },
+  {
+   "uid": "tr16",
+   "catalogId": "mashrabiya_panel",
+   "wall": "wall_bottom",
+   "u": 215,
+   "v": 190
+  },
+  {
+   "uid": "tr17",
+   "catalogId": "mashrabiya_panel",
+   "wall": "wall_bottom",
+   "u": 320,
+   "v": 190
+  },
+  {
+   "uid": "tr18",
+   "catalogId": "folding_screen_lattice",
+   "x": 405,
+   "z": 318,
+   "rot": 90
+  },
+  {
+   "uid": "tr19",
+   "catalogId": "terracotta_vase_tall",
+   "x": 372,
+   "z": 380,
+   "rot": 0
+  },
+  {
+   "uid": "tr20",
+   "catalogId": "high_counter_200",
+   "x": 580,
+   "z": 24,
+   "rot": 0
+  },
+  {
+   "uid": "tr21",
+   "catalogId": "cesca_bar_stool",
+   "x": 510,
+   "z": 78,
+   "rot": 180
+  },
+  {
+   "uid": "tr22",
+   "catalogId": "cesca_bar_stool",
+   "x": 580,
+   "z": 78,
+   "rot": 180
+  },
+  {
+   "uid": "tr23",
+   "catalogId": "cesca_bar_stool",
+   "x": 650,
+   "z": 78,
+   "rot": 180
+  },
+  {
+   "uid": "tr24",
+   "catalogId": "fabric_drum_pendant",
+   "x": 520,
+   "z": 30,
+   "rot": 0,
+   "drop": 60
+  },
+  {
+   "uid": "tr25",
+   "catalogId": "fabric_drum_pendant",
+   "x": 640,
+   "z": 30,
+   "rot": 0,
+   "drop": 60
+  },
+  {
+   "uid": "tr26",
+   "catalogId": "work_table_60",
+   "x": 500,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "tr27",
+   "catalogId": "ming_chair",
+   "x": 500,
+   "z": 310,
+   "rot": 0
+  },
+  {
+   "uid": "tr28",
+   "catalogId": "wagenfeld_lamp",
+   "x": 514,
+   "z": 380,
+   "rot": 0,
+   "y": 75
+  },
+  {
+   "uid": "tr29",
+   "catalogId": "work_table_60",
+   "x": 650,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "tr30",
+   "catalogId": "ming_chair",
+   "x": 650,
+   "z": 310,
+   "rot": 0
+  },
+  {
+   "uid": "tr31",
+   "catalogId": "wagenfeld_lamp",
+   "x": 664,
+   "z": 380,
+   "rot": 0,
+   "y": 75
+  },
+  {
+   "uid": "tr32",
+   "catalogId": "bauhaus_rug_round_180",
+   "x": 575,
+   "z": 215,
+   "rot": 0
+  },
+  {
+   "uid": "tr33",
+   "catalogId": "bauhaus_poster_a",
+   "wall": "wall_bottom",
+   "u": 575,
+   "v": 185
+  }
+ ],
+ "lights": [],
+ "mode": "day",
+ "shadows": true
+}

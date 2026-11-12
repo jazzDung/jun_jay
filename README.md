@@ -105,6 +105,36 @@ Sau đó chạy `npm run validate-data`.
   Ảnh cắt + nắn từ ảnh chụp (hoặc vẽ bằng code) bằng `python tools/make_catalog_textures.py` — thêm món mới: khai báo
   4 góc trong `QUADS` của script.
 
+## Render đẹp (path tracing)
+
+Panel **Cảnh → ✦ Render đẹp**: render một ảnh chất lượng cao từ góc nhìn hiện tại (3D hoặc Tầm mắt) bằng
+`three-gpu-pathtracer` — ánh sáng dội giữa các bề mặt, bóng mềm, nắng + bầu trời qua cửa sổ (ban ngày) hoặc chỉ đèn
+trong quán (ban đêm). Chọn chất lượng (Nháp / Đẹp / Rất đẹp) và kích thước, xem ảnh mịn dần, **Tải PNG**.
+
+- Camera **trong phòng** → phòng được dựng kín đủ tường + trần (ánh sáng đúng). Camera **ngoài phòng** → giữ tường / trần
+  đang bị cắt như khung 3D (kiểu nhà búp bê).
+- Tốc độ phụ thuộc GPU: máy này ~1 giây / mẫu ở 1200×750. Có nút "Dừng và lấy ảnh hiện tại".
+- Mã: `src/three/pathtrace.ts` (chuyển scene sang chế độ vật lý rồi khôi phục), `src/three/denoise.ts` (khử nhiễu hạt).
+
+## Phương án mẫu
+
+Panel **Cảnh → Phương án mẫu**: 5 thiết kế pha Bauhaus × phương Đông, mỗi cái có khu trò chuyện gần cửa sổ và khu làm
+việc phía trong, lối đi ≥ 80 cm. Mở một phương án là thay cảnh hiện tại (bấm ↶ để quay lại).
+
+| Phương án | Tinh thần |
+|---|---|
+| 1 · Salon Marrakech – Dessau | Kem + đỏ gạch + cobalt; ngồi bệt majlis quanh mâm đồng; bàn zellige + ghế Cesca |
+| 2 · Xưởng Bauhaus | Trắng ngà + đen + đỏ/vàng/xanh; sofa da, ghế Wassily, bàn chung dài |
+| 3 · Trà thất Indigo | Chàm + lam sồi vàng + đèn giấy Akari; bàn trà thấp, bình phong, quầy laptop |
+| 4 · Tiệm Đỏ Gạch | Cam mơ + xanh rêu + ốp lửng sồi đỏ; booth, ghế Barcelona, thảm Ba Tư, đèn lồng đồng |
+| 5 · Đêm Cobalt (đồ sẵn có) | Ban đêm, tường cobalt; dùng tối đa đồ đang có ở nhà |
+
+- Sinh lại / sửa: `python tools/make_designs.py` (toạ độ cm) rồi `npm run check-scenes` (báo chồng lấn, lối đi, đồ treo).
+- Catalog phong cách: `python tools/add_style_catalog.py` thêm món; mỗi món có `style`, `designer`, `source.url` (trang có
+  ảnh + số đo — không chép ảnh về repo). Hoạ tiết thảm / tranh / gạch sinh bằng code: `"texture": "gen:kilim:#màu,…"`
+  (kilim, persian, bauhaus, lattice, zellige, cane, stripes, checker — `src/three/shapes/patterns.ts`).
+- Đặt đèn / bình lên mặt bàn: nhập **Cao độ đáy** trong panel món.
+
 ## Xuất cho AI (Gemini)
 
 Panel **Cảnh** → **Xuất cho AI** tải về một file `.zip`:
@@ -169,7 +199,13 @@ Xem `handoff.md` mục 11. Đang ở **v1 — Phòng**:
 - [x] Lưới 10 cm trên tường đang chọn, kéo theo lưới, hiển thị độ cao tâm / mép dưới / mép trên
 - [x] Tự tìm chỗ trống khi treo, đồ lùi ra trước lớp ốp lam / phào chỉ; cảnh báo che cửa, chồng thiết bị, tràn tường
 
-**Tiếp theo:** v4 ánh sáng + camera tầm mắt → v5 chuốt (GLTF, path tracer).
+**v4 — Ánh sáng** ✓ — đèn Kelvin + độ sáng, ngày / đêm, bóng đổ, camera tầm mắt (ngồi 110 / đứng 160, WASD / joystick).
+
+**Render đẹp** ✓ — path tracing một lần (xem mục dưới).
+
+**Catalog phong cách + 5 phương án mẫu** ✓ — 55 món Bauhaus / phương Đông, 5 thiết kế trong `public/scenes/`.
+
+**Tiếp theo:** model GLTF cho đồ nội thất, xuất GLTF sang Blender.
 
 ### Future improvements
 

@@ -1,0 +1,345 @@
+{
+ "version": 1,
+ "name": "5 · Đêm Cobalt (đồ sẵn có)",
+ "room": {
+  "walls": {
+   "wall_top": {
+    "color": "#24357F",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_teak",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "wainscot",
+     "wainscotHeight": 100,
+     "uRange": [
+      50,
+      800
+     ]
+    }
+   },
+   "wall_bottom": {
+    "color": "#24357F",
+    "panel": {
+     "profile": "lam5",
+     "finish": "lam_teak",
+     "tone": null,
+     "sheen": "matte",
+     "coverage": "full",
+     "wainscotHeight": 120,
+     "uRange": [
+      50,
+      400
+     ]
+    }
+   },
+   "wall_window": {
+    "color": "#B5462E"
+   },
+   "wall_back_wc": {
+    "color": "#24357F"
+   },
+   "wall_back_bar": {
+    "color": "#24357F"
+   },
+   "wall_back_hall": {
+    "color": "#24357F"
+   }
+  },
+  "hiddenFixtures": [
+   "tube_top",
+   "tube_bottom"
+  ],
+  "fixtureLights": {
+   "downlight": {
+    "on": true,
+    "kelvin": 2700,
+    "intensity": 0.35
+   }
+  }
+ },
+ "items": [
+  {
+   "uid": "de1",
+   "catalogId": "tiger_rug",
+   "x": 200,
+   "z": 215,
+   "rot": 90
+  },
+  {
+   "uid": "de2",
+   "catalogId": "sofa_low_240",
+   "x": 200,
+   "z": 355,
+   "rot": 180
+  },
+  {
+   "uid": "de3",
+   "catalogId": "armchair_low",
+   "x": 130,
+   "z": 55,
+   "rot": 0
+  },
+  {
+   "uid": "de4",
+   "catalogId": "armchair_low",
+   "x": 270,
+   "z": 55,
+   "rot": 0
+  },
+  {
+   "uid": "de5",
+   "catalogId": "coffee_table_oval",
+   "x": 200,
+   "z": 255,
+   "rot": 0
+  },
+  {
+   "uid": "de6",
+   "catalogId": "moroccan_pouf_tan",
+   "x": 345,
+   "z": 215,
+   "rot": 0
+  },
+  {
+   "uid": "de7",
+   "catalogId": "bic_pen_lamp",
+   "x": 40,
+   "z": 372,
+   "rot": 180
+  },
+  {
+   "uid": "de8",
+   "catalogId": "trolley_red",
+   "x": 372,
+   "z": 372,
+   "rot": 0
+  },
+  {
+   "uid": "de9",
+   "catalogId": "cube_lamp_green",
+   "x": 372,
+   "z": 372,
+   "rot": 0,
+   "y": 65
+  },
+  {
+   "uid": "de10",
+   "catalogId": "rattan_plant_stand",
+   "x": 45,
+   "z": 45,
+   "rot": 0
+  },
+  {
+   "uid": "de11",
+   "catalogId": "paper_lantern_white",
+   "x": 200,
+   "z": 235,
+   "rot": 0,
+   "drop": 25
+  },
+  {
+   "uid": "de12",
+   "catalogId": "art_blue_squares",
+   "wall": "wall_top",
+   "u": 200,
+   "v": 180
+  },
+  {
+   "uid": "de13",
+   "catalogId": "wall_light_round_orange",
+   "wall": "wall_top",
+   "u": 100,
+   "v": 180
+  },
+  {
+   "uid": "de14",
+   "catalogId": "wall_light_round_orange",
+   "wall": "wall_top",
+   "u": 300,
+   "v": 180
+  },
+  {
+   "uid": "de15",
+   "catalogId": "poster_karma_cat",
+   "wall": "wall_bottom",
+   "u": 345,
+   "v": 175
+  },
+  {
+   "uid": "de16",
+   "catalogId": "clock_clover",
+   "wall": "wall_bottom",
+   "u": 60,
+   "v": 190
+  },
+  {
+   "uid": "de17",
+   "catalogId": "work_table_60",
+   "x": 460,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "de18",
+   "catalogId": "work_chair",
+   "x": 410,
+   "z": 40,
+   "rot": 270
+  },
+  {
+   "uid": "de19",
+   "catalogId": "work_chair",
+   "x": 510,
+   "z": 40,
+   "rot": 90
+  },
+  {
+   "uid": "de20",
+   "catalogId": "work_table_60",
+   "x": 620,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "de21",
+   "catalogId": "work_chair",
+   "x": 570,
+   "z": 40,
+   "rot": 270
+  },
+  {
+   "uid": "de22",
+   "catalogId": "work_chair",
+   "x": 670,
+   "z": 40,
+   "rot": 90
+  },
+  {
+   "uid": "de23",
+   "catalogId": "tube_work_desk_120",
+   "x": 480,
+   "z": 368,
+   "rot": 0
+  },
+  {
+   "uid": "de24",
+   "catalogId": "work_chair",
+   "x": 452,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "de25",
+   "catalogId": "work_chair",
+   "x": 508,
+   "z": 312,
+   "rot": 0
+  },
+  {
+   "uid": "de26",
+   "catalogId": "bauhaus_low_shelf",
+   "x": 640,
+   "z": 380,
+   "rot": 180
+  },
+  {
+   "uid": "de27",
+   "catalogId": "wagenfeld_lamp",
+   "x": 600,
+   "z": 380,
+   "rot": 0,
+   "y": 90
+  },
+  {
+   "uid": "de28",
+   "catalogId": "ginger_jar",
+   "x": 700,
+   "z": 380,
+   "rot": 0,
+   "y": 90
+  },
+  {
+   "uid": "de29",
+   "catalogId": "pendant_dome_black",
+   "x": 480,
+   "z": 368,
+   "rot": 0,
+   "drop": 70
+  },
+  {
+   "uid": "de30",
+   "catalogId": "moroccan_lantern",
+   "x": 540,
+   "z": 60,
+   "rot": 0,
+   "drop": 45
+  },
+  {
+   "uid": "de31",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 480,
+   "v": 190
+  },
+  {
+   "uid": "de32",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 520,
+   "v": 190
+  },
+  {
+   "uid": "de33",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 560,
+   "v": 190
+  },
+  {
+   "uid": "de34",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 480,
+   "v": 150
+  },
+  {
+   "uid": "de35",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 520,
+   "v": 150
+  },
+  {
+   "uid": "de36",
+   "catalogId": "magnet_steel_30",
+   "wall": "wall_top",
+   "u": 560,
+   "v": 150
+  },
+  {
+   "uid": "de37",
+   "catalogId": "pegboard_60x40",
+   "wall": "wall_bottom",
+   "u": 620,
+   "v": 175
+  },
+  {
+   "uid": "de38",
+   "catalogId": "pegboard_60x40",
+   "wall": "wall_bottom",
+   "u": 682,
+   "v": 175
+  },
+  {
+   "uid": "de39",
+   "catalogId": "led_strip_200",
+   "wall": "wall_bottom",
+   "u": 560,
+   "v": 240
+  }
+ ],
+ "lights": [],
+ "mode": "night",
+ "shadows": true
+}

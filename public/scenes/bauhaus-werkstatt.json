@@ -1,0 +1,284 @@
+{
+ "version": 1,
+ "name": "2 · Xưởng Bauhaus",
+ "room": {
+  "walls": {
+   "wall_top": {
+    "color": "#F4F1EA",
+    "mouldings": false
+   },
+   "wall_bottom": {
+    "color": "#F4F1EA",
+    "mouldings": false
+   },
+   "wall_window": {
+    "color": "#F2C230"
+   },
+   "wall_back_wc": {
+    "color": "#D7262B"
+   },
+   "wall_back_bar": {
+    "color": "#D7262B",
+    "mouldings": false
+   },
+   "wall_back_hall": {
+    "color": "#D7262B"
+   }
+  },
+  "hiddenFixtures": [
+   "tube_top",
+   "tube_bottom"
+  ],
+  "fixtureLights": {
+   "downlight": {
+    "on": true,
+    "kelvin": 3000,
+    "intensity": 0.7
+   }
+  },
+  "ceilingColor": "#FFFFFF"
+ },
+ "items": [
+  {
+   "uid": "ba1",
+   "catalogId": "bauhaus_rug_200x300",
+   "x": 200,
+   "z": 215,
+   "rot": 90
+  },
+  {
+   "uid": "ba2",
+   "catalogId": "tubular_sofa_160",
+   "x": 190,
+   "z": 358,
+   "rot": 180
+  },
+  {
+   "uid": "ba3",
+   "catalogId": "wassily_chair",
+   "x": 130,
+   "z": 60,
+   "rot": 0
+  },
+  {
+   "uid": "ba4",
+   "catalogId": "wassily_chair_tan",
+   "x": 250,
+   "z": 60,
+   "rot": 0
+  },
+  {
+   "uid": "ba5",
+   "catalogId": "laccio_coffee_table",
+   "x": 190,
+   "z": 265,
+   "rot": 0
+  },
+  {
+   "uid": "ba6",
+   "catalogId": "albers_nesting_tables",
+   "x": 330,
+   "z": 372,
+   "rot": 180
+  },
+  {
+   "uid": "ba7",
+   "catalogId": "garden_stool_blue_white",
+   "x": 60,
+   "z": 372,
+   "rot": 0
+  },
+  {
+   "uid": "ba8",
+   "catalogId": "wagenfeld_lamp",
+   "x": 60,
+   "z": 372,
+   "rot": 0,
+   "y": 46
+  },
+  {
+   "uid": "ba9",
+   "catalogId": "moroccan_pouf_cobalt",
+   "x": 320,
+   "z": 235,
+   "rot": 0
+  },
+  {
+   "uid": "ba10",
+   "catalogId": "moroccan_pouf_terracotta",
+   "x": 50,
+   "z": 230,
+   "rot": 0
+  },
+  {
+   "uid": "ba11",
+   "catalogId": "e1027_table",
+   "x": 190,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "ba12",
+   "catalogId": "plant_pot_40",
+   "x": 40,
+   "z": 40,
+   "rot": 0
+  },
+  {
+   "uid": "ba13",
+   "catalogId": "akari_55a",
+   "x": 190,
+   "z": 215,
+   "rot": 0,
+   "drop": 25
+  },
+  {
+   "uid": "ba14",
+   "catalogId": "bauhaus_poster_b",
+   "wall": "wall_bottom",
+   "u": 190,
+   "v": 170
+  },
+  {
+   "uid": "ba15",
+   "catalogId": "bauhaus_poster_a",
+   "wall": "wall_top",
+   "u": 130,
+   "v": 165
+  },
+  {
+   "uid": "ba16",
+   "catalogId": "clock_clover",
+   "wall": "wall_top",
+   "u": 250,
+   "v": 185
+  },
+  {
+   "uid": "ba17",
+   "catalogId": "bauhaus_bookshelf",
+   "x": 420,
+   "z": 338,
+   "rot": 90
+  },
+  {
+   "uid": "ba18",
+   "catalogId": "communal_table_220",
+   "x": 590,
+   "z": 215,
+   "rot": 0
+  },
+  {
+   "uid": "ba19",
+   "catalogId": "cesca_chair",
+   "x": 510,
+   "z": 150,
+   "rot": 0
+  },
+  {
+   "uid": "ba20",
+   "catalogId": "cesca_chair",
+   "x": 510,
+   "z": 280,
+   "rot": 180
+  },
+  {
+   "uid": "ba21",
+   "catalogId": "cesca_chair",
+   "x": 590,
+   "z": 150,
+   "rot": 0
+  },
+  {
+   "uid": "ba22",
+   "catalogId": "cesca_chair",
+   "x": 590,
+   "z": 280,
+   "rot": 180
+  },
+  {
+   "uid": "ba23",
+   "catalogId": "cesca_chair",
+   "x": 670,
+   "z": 150,
+   "rot": 0
+  },
+  {
+   "uid": "ba24",
+   "catalogId": "cesca_chair",
+   "x": 670,
+   "z": 280,
+   "rot": 180
+  },
+  {
+   "uid": "ba25",
+   "catalogId": "pendant_dome_black",
+   "x": 520,
+   "z": 215,
+   "rot": 0,
+   "drop": 70
+  },
+  {
+   "uid": "ba26",
+   "catalogId": "pendant_dome_black",
+   "x": 660,
+   "z": 215,
+   "rot": 0,
+   "drop": 70
+  },
+  {
+   "uid": "ba27",
+   "catalogId": "kaiser_idell_lamp",
+   "x": 590,
+   "z": 215,
+   "rot": 0,
+   "y": 75
+  },
+  {
+   "uid": "ba28",
+   "catalogId": "bauhaus_low_shelf",
+   "x": 560,
+   "z": 20,
+   "rot": 0
+  },
+  {
+   "uid": "ba29",
+   "catalogId": "ginger_jar",
+   "x": 500,
+   "z": 20,
+   "rot": 0,
+   "y": 90
+  },
+  {
+   "uid": "ba30",
+   "catalogId": "kaiser_idell_lamp",
+   "x": 620,
+   "z": 20,
+   "rot": 0,
+   "y": 90
+  },
+  {
+   "uid": "ba31",
+   "catalogId": "opal_wall_globe",
+   "wall": "wall_bottom",
+   "u": 520,
+   "v": 180
+  },
+  {
+   "uid": "ba32",
+   "catalogId": "opal_wall_globe",
+   "wall": "wall_bottom",
+   "u": 660,
+   "v": 180
+  },
+  {
+   "uid": "ba33",
+   "catalogId": "art_blue_squares",
+   "wall": "wall_top",
+   "u": 560,
+   "v": 165
+  }
+ ],
+ "lights": [],
+ "mode": "day",
+ "shadows": true
+}
