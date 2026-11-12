@@ -554,7 +554,7 @@ export class Viewer {
    * Render chất lượng cao (path tracing) từ góc camera 3D / tầm mắt hiện tại.
    * Trong lúc render, khung nhìn real-time tạm dừng.
    */
-  async renderHQ(opts: Omit<PathTraceOptions, 'mode'>): Promise<HTMLCanvasElement> {
+  async renderHQ(opts: Omit<PathTraceOptions, 'mode' | 'enclosed'>): Promise<HTMLCanvasElement> {
     const b = this.built;
     if (!b || this.busy) throw new Error('Đang bận render');
     this.busy = true;
@@ -580,12 +580,19 @@ export class Viewer {
           helpers: [this.selectionBox, ...this.warnBoxes, ...(this.grid ? [this.grid] : [])],
           itemLights,
         },
-        { ...opts, mode: this.sceneMode },
+        { ...opts, mode: this.sceneMode, enclosed: this.cameraInside() },
       );
     } finally {
       this.busy = false;
       this.updateVisibility();
     }
+  }
+
+  /** Camera 3D đang nằm trong lòng phòng (dưới trần, trong phạm vi các khu)? */
+  cameraInside(): boolean {
+    const p = this.persp.position;
+    const b = this.bounds;
+    return p.y < b.max.y && p.y > 0 && p.x > b.min.x && p.x < b.max.x && p.z > b.min.z && p.z < b.max.z;
   }
 
   get cameraMode(): CameraMode {

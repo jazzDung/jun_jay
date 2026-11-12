@@ -16,6 +16,8 @@ export interface PathTraceOptions {
   samples: number;
   bounces?: number;
   mode: 'day' | 'night';
+  /** Camera ở trong phòng → dựng phòng kín. Ở ngoài → giữ tường/trần đang bị cắt (kiểu nhà búp bê). */
+  enclosed: boolean;
   onProgress?: (samples: number, total: number, canvas: HTMLCanvasElement) => void;
   shouldCancel?: () => boolean;
 }
@@ -93,8 +95,10 @@ export async function pathTrace(ctx: TraceContext, opts: PathTraceOptions): Prom
 
   try {
     // ---- scene → chế độ vật lý
-    for (const w of ctx.walls) set(w, 'visible', true);
-    set(ctx.ceiling, 'visible', true);
+    if (opts.enclosed) {
+      for (const w of ctx.walls) set(w, 'visible', true);
+      set(ctx.ceiling, 'visible', true);
+    }
     set(ctx.ceilingMat, 'emissiveIntensity', 0);
     for (const h of [...ctx.helpers, ...ctx.rasterOnly]) set(h, 'visible', false);
     scene.traverse((o) => {
@@ -122,15 +126,18 @@ export async function pathTrace(ctx: TraceContext, opts: PathTraceOptions): Prom
       }
     }
     set(ctx.sun, 'visible', sky.sun > 0);
-    set(ctx.sun, 'intensity', sky.sun);
+    set(ctx.sun, 'intensity', opts.enclosed ? sky.sun : sky.sun * 0.5);
 
     env.topColor.set(sky.top);
     env.bottomColor.set(sky.bottom);
     env.update();
     set(scene, 'environment', env);
-    set(scene, 'environmentIntensity', sky.env);
-    set(scene, 'background', env);
-    set(scene, 'backgroundIntensity', sky.env);
+    // phòng mở (nhìn từ ngoài): trời chiếu thẳng vào nên giảm cường độ để không cháy sáng
+    const envI = opts.enclosed ? sky.env : opts.mode === 'day' ? 0.9 : 0.25;
+    set(scene, 'environmentIntensity', envI);
+    // nhìn từ ngoài: nền tối trung tính như khung 3D (bầu trời vẫn chiếu sáng qua environment)
+    set(scene, 'background', opts.enclosed ? env : new THREE.Color('#1f1a17'));
+    set(scene, 'backgroundIntensity', opts.enclosed ? sky.env : 1);
 
     // ---- path trace
     renderer.setPixelRatio(1);
